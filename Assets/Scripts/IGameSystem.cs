@@ -4,7 +4,8 @@ using Random = UnityEngine.Random;
 // 移除 TMPro 引用，因为它在当前代码中未使用
 // using TMPro; 
 using System.IO;
-using System.Linq; // 用于 Linq 简化操作
+using System.Linq;
+using Sirenix.OdinInspector; // 用于 Linq 简化操作
 
 public class IGameSystem : MonoBehaviour
 {
@@ -25,7 +26,7 @@ public class IGameSystem : MonoBehaviour
     private readonly KeyCode _keyCode_reload = KeyCode.R; // 重新加载配置和黑名单
 
     // 状态变量
-    private int currentPrizeIndex = 1;
+    public int currentPrizeIndex = 1;
     private int currentPeopleIndex = 0;
     
     // 配置变量
@@ -43,6 +44,13 @@ public class IGameSystem : MonoBehaviour
     private string configFilePath;
     
     private int availablePeopleCount = 0; // 可用人数
+    
+    
+    [Button("Prize Draw")]
+    void PrizeDrawButton()
+    {
+        PrizeDraw();
+    }
 
     // Start is called before the first frame update
     void Start()

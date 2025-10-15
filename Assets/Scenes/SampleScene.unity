@@ -453,7 +453,7 @@ MonoBehaviour:
   m_BlockingObjects: 0
   m_BlockingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
 --- !u!114 &929758135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -656,8 +656,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ebc233b9844b074488d18b648eafd19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blackListFilePath: 
-  textMeshProUGUI: {fileID: 275808707}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
