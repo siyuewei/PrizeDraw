@@ -1,20 +1,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
-// 移除 TMPro 引用，因为它在当前代码中未使用
-// using TMPro; 
 using System.IO;
-using System.Linq;
-using Sirenix.OdinInspector; // 用于 Linq 简化操作
+using Sirenix.OdinInspector;
 
 /// <summary>
-/// 原始游戏系统 - 已废弃，功能已拆分到 InputHandler 和 GameLogicHandler
-/// 保留此文件作为参考，建议删除
+/// 游戏逻辑处理器 - 负责订阅事件和处理抽奖逻辑
 /// </summary>
-[System.Obsolete("此文件已废弃，功能已拆分到 InputHandler 和 GameLogicHandler")]
-public class IGameSystem : MonoBehaviour
+public class GameLogicHandler : MonoBehaviour
 {
-    //使用 [System.Serializable] 标记，确保 JsonUtility 可以正确序列化/反序列化
+    public static GameLogicHandler Instance { get; private set; }
+    
+    // 使用 [System.Serializable] 标记，确保 JsonUtility 可以正确序列化/反序列化
     [System.Serializable]
     private class ConfigData
     {
@@ -22,16 +19,8 @@ public class IGameSystem : MonoBehaviour
         public int maxPeopleIndex = 100; // 提供默认值
     }
     
-    // 按键映射
-    private readonly KeyCode _keyCode_Prize1 = KeyCode.Alpha1; // 一等奖
-    private readonly KeyCode _keyCode_Prize2 = KeyCode.Alpha2; // 二等奖
-    private readonly KeyCode _keyCode_Prize3 = KeyCode.Alpha3; // 三等奖
-    private readonly KeyCode _keyCode_Prize4 = KeyCode.Alpha4; // 四等奖
-    private readonly KeyCode _keyCode_PrizeDraw = KeyCode.Space; // 抽奖键
-    private readonly KeyCode _keyCode_reload = KeyCode.R; // 重新加载配置和黑名单
-
     // 状态变量
-    public int currentPrizeIndex = 1;
+    public int CurrentPrizeIndex { get; private set; } = 1;
     private int currentPeopleIndex = 0;
     
     // 配置变量
@@ -50,11 +39,24 @@ public class IGameSystem : MonoBehaviour
     
     private int availablePeopleCount = 0; // 可用人数
     
-    
     [Button("Prize Draw")]
     void PrizeDrawButton()
     {
         PrizeDraw();
+    }
+
+    void Awake()
+    {
+        // 单例模式
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     // Start is called before the first frame update
@@ -70,6 +72,59 @@ public class IGameSystem : MonoBehaviour
         
         // 首次检查可用人数
         CheckAvailablePeopleCount();
+        
+        // 订阅事件
+        SubscribeToEvents();
+    }
+    
+    void OnDestroy()
+    {
+        // 取消订阅事件
+        UnsubscribeFromEvents();
+    }
+    
+    /// <summary>
+    /// 订阅事件
+    /// </summary>
+    private void SubscribeToEvents()
+    {
+        GameEvents.OnPrizeDrawRequested += HandlePrizeDrawRequested;
+        GameEvents.OnPrizeIndexChanged += HandlePrizeIndexChanged;
+        GameEvents.OnReloadConfigRequested += HandleReloadConfigRequested;
+    }
+    
+    /// <summary>
+    /// 取消订阅事件
+    /// </summary>
+    private void UnsubscribeFromEvents()
+    {
+        GameEvents.OnPrizeDrawRequested -= HandlePrizeDrawRequested;
+        GameEvents.OnPrizeIndexChanged -= HandlePrizeIndexChanged;
+        GameEvents.OnReloadConfigRequested -= HandleReloadConfigRequested;
+    }
+    
+    /// <summary>
+    /// 处理抽奖请求
+    /// </summary>
+    private void HandlePrizeDrawRequested(int prizeIndex)
+    {
+        PrizeDraw();
+    }
+    
+    /// <summary>
+    /// 处理奖项索引变更
+    /// </summary>
+    private void HandlePrizeIndexChanged(int prizeIndex)
+    {
+        CurrentPrizeIndex = prizeIndex;
+    }
+    
+    /// <summary>
+    /// 处理重新加载配置请求
+    /// </summary>
+    private void HandleReloadConfigRequested()
+    {
+        ReadFiles();
     }
     
     void ReadFiles()
@@ -109,7 +164,6 @@ public class IGameSystem : MonoBehaviour
         
         return availableCount;
     }
-
 
     void ReadBlackListFile()
     {
@@ -195,46 +249,6 @@ public class IGameSystem : MonoBehaviour
             Debug.LogError($"读取配置文件失败：{e.Message}。使用默认值。");
         }
     }
-
-    void Update()
-    {
-        SwitchPrizeByKey();
-        if (Input.GetKeyDown(_keyCode_PrizeDraw))
-        {
-            PrizeDraw();
-        }
-        // 可以在这里添加一个按键，用于重新读取配置或黑名单（例如 KeyCode.R）
-        if (Input.GetKeyDown(_keyCode_reload))
-        {
-            ReadFiles();
-            Debug.Log("重新加载配置和黑名单文件。");
-        }
-    }
-    
-
-    void SwitchPrizeByKey()
-    {
-        if (Input.GetKeyDown(_keyCode_Prize1))
-        {
-            currentPrizeIndex = 1;
-            Debug.Log("切换到一等奖");
-        }
-        else if (Input.GetKeyDown(_keyCode_Prize2))
-        {
-            currentPrizeIndex = 2;
-            Debug.Log("切换到二等奖");
-        }
-        else if (Input.GetKeyDown(_keyCode_Prize3))
-        {
-            currentPrizeIndex = 3;
-            Debug.Log("切换到三等奖");
-        }
-        else if (Input.GetKeyDown(_keyCode_Prize4))
-        {
-            currentPrizeIndex = 4;
-            Debug.Log("切换到四等奖");
-        }
-    }
     
     void PrizeDraw()
     {
@@ -273,7 +287,7 @@ public class IGameSystem : MonoBehaviour
         // 将中奖人添加到已中奖集合
         drawnPeopleIndices.Add(currentPeopleIndex);
         
-        string logString = $"抽奖键按下，当前奖项为第 {currentPrizeIndex} 等奖，中奖号码为：{currentPeopleIndex}。 " +
+        string logString = $"抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{currentPeopleIndex}。 " +
                      $"已中奖人数：{drawnPeopleIndices.Count}";
         Debug.Log(logString);
     }
