@@ -11,13 +11,15 @@ public class InputHandler : MonoBehaviour
     private readonly KeyCode _keyCode_Prize3 = KeyCode.Alpha3; // 三等奖
     private readonly KeyCode _keyCode_Prize4 = KeyCode.Alpha4; // 四等奖
     private readonly KeyCode _keyCode_PrizeDraw = KeyCode.Space; // 抽奖键
-    private readonly KeyCode _keyCode_reload = KeyCode.R; // 重新加载配置和黑名单
+    private readonly KeyCode _keyCode_reload = KeyCode.C; // 重新加载配置和黑名单
+    private readonly KeyCode _keyCode_restart = KeyCode.R; //重新开启一次抽奖
 
     void Update()
     {
         HandlePrizeSelection();
         HandlePrizeDraw();
         HandleReload();
+        HandleRestart();
     }
     
     /// <summary>
@@ -69,6 +71,18 @@ public class InputHandler : MonoBehaviour
         {
             GameEvents.RequestReloadConfig();
             Debug.Log("重新加载配置和黑名单文件。");
+        }
+    }
+
+    /// <summary>
+    /// 处理重新开始抽奖输入
+    /// </summary>
+    private void HandleRestart()
+    {
+        if (Input.GetKeyDown(_keyCode_restart))
+        {
+            GameEvents.RequestRestart();
+            Debug.Log("重新开始一次抽奖。");
         }
     }
 }

@@ -435,9 +435,9 @@ VideoPlayer:
   m_EnabledAudioTracks: 
   m_DirectAudioMutes: 
   m_ControlledAudioTrackCount: 0
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_SkipOnDrop: 0
-  m_Looping: 1
+  m_Looping: 0
   m_WaitForFirstFrame: 1
   m_FrameReadyEventEnabled: 0
   m_VideoShaders: []
@@ -542,7 +542,7 @@ VideoPlayer:
   m_EnabledAudioTracks: 
   m_DirectAudioMutes: 
   m_ControlledAudioTrackCount: 0
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_SkipOnDrop: 0
   m_Looping: 0
   m_WaitForFirstFrame: 1
@@ -1514,6 +1514,8 @@ MonoBehaviour:
   prizeResultPanel: {fileID: 1142713407}
   prizeResultText: {fileID: 1963387370}
   prizeResultImage: {fileID: 1142713409}
+  curtainPanel: {fileID: 437823457}
+  curtainVideoPlayer: {fileID: 437823459}
 --- !u!1 &1963387368
 GameObject:
   m_ObjectHideFlags: 0

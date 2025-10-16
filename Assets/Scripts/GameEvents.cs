@@ -9,6 +9,7 @@ public static class GameEvents
     public static event Action<int> OnPrizeDrawRequested;
     public static event Action<int> OnPrizeIndexChanged;
     public static event Action OnReloadConfigRequested;
+    public static event Action OnRestartRequested;
     
     // 事件发送方法
     public static void RequestPrizeDraw(int prizeIndex)
@@ -24,5 +25,10 @@ public static class GameEvents
     public static void RequestReloadConfig()
     {
         OnReloadConfigRequested?.Invoke();
+    }
+    
+    public static void RequestRestart()
+    {
+        OnRestartRequested?.Invoke();
     }
 }
