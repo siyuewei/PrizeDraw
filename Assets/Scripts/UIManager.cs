@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -5,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public class UIManager : MonoBehaviour
 {
+    public List<GameObject> twinkleEffects; // 闪烁特效，对应不同奖项
+    
     void Start()
     {
         // 订阅事件
@@ -41,7 +44,13 @@ public class UIManager : MonoBehaviour
     /// <param name="prizeIndex">奖项索引（1-4）</param>
     private void HandlePrizeIndexChanged(int prizeIndex)
     {
-
+       if(prizeIndex > 0 && prizeIndex <= twinkleEffects.Count)
+       {
+           for(int i = 0; i < twinkleEffects.Count; i++)
+           {
+               twinkleEffects[i].SetActive(i == prizeIndex - 1);
+           }
+       }
     }
     
     /// <summary>
