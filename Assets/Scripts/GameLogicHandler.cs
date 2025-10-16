@@ -167,7 +167,16 @@ public class GameLogicHandler : MonoBehaviour
     /// </summary>
     private void HandleReloadConfigRequested()
     {
+        //只有在Idle状态下才允许重新加载配置
+        if (CurrentState != GameState.Idle)
+        {
+            Debug.LogWarning($"当前状态为 {CurrentState}，无法重新加载配置");
+            return;
+        }
+        
+        //重新加载配置
         ReadFiles();
+        Debug.Log("重新加载配置完成");
     }
     
     /// <summary>
