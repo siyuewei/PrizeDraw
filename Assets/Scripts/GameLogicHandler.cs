@@ -21,7 +21,7 @@ public class GameLogicHandler : MonoBehaviour
     
     // 状态变量
     public int CurrentPrizeIndex { get; private set; } = 1;
-    private int currentPeopleIndex = 0;
+    public int LastWinnerID = 0;
     
     // 配置变量
     private int minPeopleIndex = 1;
@@ -283,11 +283,11 @@ public class GameLogicHandler : MonoBehaviour
             
         } while (drawnPeopleIndices.Contains(drawnIndex) || blackList.Contains(drawnIndex));
 
-        currentPeopleIndex = drawnIndex;
+        LastWinnerID = drawnIndex;
         // 将中奖人添加到已中奖集合
-        drawnPeopleIndices.Add(currentPeopleIndex);
+        drawnPeopleIndices.Add(LastWinnerID);
         
-        string logString = $"抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{currentPeopleIndex}。 " +
+        string logString = $"抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{LastWinnerID}。 " +
                      $"已中奖人数：{drawnPeopleIndices.Count}";
         Debug.Log(logString);
     }

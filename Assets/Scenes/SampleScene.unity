@@ -544,7 +544,7 @@ VideoPlayer:
   m_ControlledAudioTrackCount: 0
   m_PlayOnAwake: 1
   m_SkipOnDrop: 0
-  m_Looping: 1
+  m_Looping: 0
   m_WaitForFirstFrame: 1
   m_FrameReadyEventEnabled: 0
   m_VideoShaders: []
@@ -1176,7 +1176,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 38, y: 29}
+  m_AnchoredPosition: {x: 0, y: -414.74}
   m_SizeDelta: {x: -1648.2905, y: -829.4761}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1142713409
@@ -1199,8 +1199,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 1bfb138145624d24cbdd69a53b872032, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1262,6 +1262,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 353db5a07cb8bc14190052211416c043, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  LastWinnerID: 0
 --- !u!114 &1214028354
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1502,6 +1503,17 @@ MonoBehaviour:
   - {fileID: 413782063}
   - {fileID: 943225583}
   - {fileID: 1342851359}
+  prizeResultBackgrounds:
+  - {fileID: 21300000, guid: 1bfb138145624d24cbdd69a53b872032, type: 3}
+  - {fileID: 21300000, guid: 4ff3bd7072b27aa468aebdb07e64dd37, type: 3}
+  - {fileID: 21300000, guid: bcfcdf352fad193488b73db4138cb382, type: 3}
+  - {fileID: 21300000, guid: d95132138cd4cd143a64bc0999f9f59f, type: 3}
+  playerIdleClip: {fileID: 32900000, guid: c5ce44f28dc5efb4c9f19d953cd5a657, type: 3}
+  playerRunClip: {fileID: 32900000, guid: 9596dab94025ed643a438c1602171bad, type: 3}
+  videoPlayerForPlayer: {fileID: 497312298}
+  prizeResultPanel: {fileID: 1142713407}
+  prizeResultText: {fileID: 1963387370}
+  prizeResultImage: {fileID: 1142713409}
 --- !u!1 &1963387368
 GameObject:
   m_ObjectHideFlags: 0
