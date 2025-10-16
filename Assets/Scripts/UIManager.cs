@@ -6,23 +6,10 @@ using TMPro;
 using UnityEngine.UI;
 
 /// <summary>
-/// UI管理器 - 基于状态机模式管理抽奖流程的UI状态
+/// UI管理器 - 负责监听游戏状态变化并更新UI显示
 /// </summary>
 public class UIManager : MonoBehaviour
 {
-    #region 状态枚举定义
-    /// <summary>
-    /// UI状态枚举
-    /// </summary>
-    private enum UIState
-    {
-        Idle,           // 待机状态：等待选择奖项和抽奖
-        Drawing,        // 抽奖中：播放抽奖动画
-        ShowingResult,  // 显示结果：显示中奖结果，等待重启
-        Transitioning   // 过渡中：播放过渡动画，准备回到待机
-    }
-    #endregion
-    
     #region Inspector配置
     [Header("星星特效——对应不同奖项")]
     public List<GameObject> twinkleEffects; // 闪烁特效，对应不同奖项
@@ -45,21 +32,11 @@ public class UIManager : MonoBehaviour
     public VideoPlayer curtainVideoPlayer;
     #endregion
     
-    #region 状态变量
-    [Header("调试信息")]
-    [ReadOnly, ShowInInspector]
-    private UIState currentState = UIState.Idle;
-    
-    #endregion
-    
     #region Unity生命周期
     void Start()
     {
         // 订阅事件
         SubscribeToEvents();
-        
-        // 初始化到待机状态
-        EnterIdleState();
     }
     
     void OnDestroy()
@@ -75,9 +52,11 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void SubscribeToEvents()
     {
-        GameEvents.OnPrizeIndexChanged += HandlePrizeIndexChanged;
-        GameEvents.OnPrizeDrawRequested += HandlePrizeDrawRequested;
-        GameEvents.OnRestartRequested += HandleRestartRequested;
+        // 订阅游戏状态变化事件
+        GameEvents.OnGameStateChanged += HandleGameStateChanged;
+        
+        // 订阅奖项更新事件（由GameLogicHandler验证后发送）
+        GameEvents.OnPrizeIndexUpdated += HandlePrizeIndexUpdated;
         
         // 订阅视频播放器的结束事件
         if (videoPlayerForPlayer != null)
@@ -96,9 +75,11 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void UnsubscribeFromEvents()
     {
-        GameEvents.OnPrizeIndexChanged -= HandlePrizeIndexChanged;
-        GameEvents.OnPrizeDrawRequested -= HandlePrizeDrawRequested;
-        GameEvents.OnRestartRequested -= HandleRestartRequested;
+        // 取消订阅游戏状态变化事件
+        GameEvents.OnGameStateChanged -= HandleGameStateChanged;
+        
+        // 取消订阅奖项更新事件
+        GameEvents.OnPrizeIndexUpdated -= HandlePrizeIndexUpdated;
         
         // 取消订阅视频播放器事件
         if (videoPlayerForPlayer != null)
@@ -115,52 +96,36 @@ public class UIManager : MonoBehaviour
     
     #region 事件处理方法
     /// <summary>
-    /// 处理奖项索引变更事件
+    /// 处理游戏状态变化事件
+    /// </summary>
+    /// <param name="newState">新的游戏状态</param>
+    private void HandleGameStateChanged(GameState newState)
+    {
+        switch (newState)
+        {
+            case GameState.Idle:
+                ShowIdleUI();
+                break;
+            case GameState.Drawing:
+                ShowDrawingUI();
+                break;
+            case GameState.ShowingResult:
+                ShowResultUI();
+                break;
+            case GameState.Transitioning:
+                ShowTransitionUI();
+                break;
+        }
+    }
+    
+    /// <summary>
+    /// 处理奖项索引更新事件（已通过GameLogicHandler验证）
     /// </summary>
     /// <param name="prizeIndex">奖项索引（1-4）</param>
-    private void HandlePrizeIndexChanged(int prizeIndex)
+    private void HandlePrizeIndexUpdated(int prizeIndex)
     {
-        // 只在待机状态下才允许切换奖项
-        if (currentState != UIState.Idle)
-        {
-            Debug.LogWarning($"当前状态为 {currentState}，无法切换奖项");
-            return;
-        }
-        
+        Debug.Log($"[UI] 更新奖项显示: {prizeIndex}等奖");
         UpdateTwinkleEffects(prizeIndex);
-    }
-    
-    /// <summary>
-    /// 处理抽奖请求事件
-    /// </summary>
-    /// <param name="prizeIndex">当前奖项索引</param>
-    private void HandlePrizeDrawRequested(int prizeIndex)
-    {
-        // 只在待机状态下才允许抽奖
-        if (currentState != UIState.Idle)
-        {
-            Debug.LogWarning($"当前状态为 {currentState}，无法进行抽奖");
-            return;
-        }
-        
-        // 进入抽奖状态
-        EnterDrawingState();
-    }
-    
-    /// <summary>
-    /// 处理重启请求事件
-    /// </summary>
-    private void HandleRestartRequested()
-    {
-        // 只在显示结果状态下才允许重启
-        if (currentState != UIState.ShowingResult)
-        {
-            Debug.LogWarning($"当前状态为 {currentState}，无法重启");
-            return;
-        }
-        
-        // 进入过渡状态
-        EnterTransitioningState();
     }
     
     /// <summary>
@@ -168,14 +133,8 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void OnPlayerVideoFinished(VideoPlayer vp)
     {
-        // 只在抽奖状态下才处理视频结束
-        if (currentState != UIState.Drawing)
-        {
-            return;
-        }
-        
-        // 进入显示结果状态
-        EnterShowingResultState();
+        // 通知游戏逻辑：抽奖动画已完成
+        GameEvents.NotifyDrawingComplete();
     }
     
     /// <summary>
@@ -183,25 +142,18 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void OnCurtainVideoFinished(VideoPlayer vp)
     {
-        // 只在过渡状态下才处理视频结束
-        if (currentState != UIState.Transitioning)
-        {
-            return;
-        }
-        
-        // 回到待机状态
-        EnterIdleState();
+        // 通知游戏逻辑：过渡动画已完成
+        GameEvents.NotifyTransitionComplete();
     }
     #endregion
     
-    #region 状态转换方法
+    #region UI显示方法
     /// <summary>
-    /// 进入待机状态
+    /// 显示待机状态UI
     /// </summary>
-    private void EnterIdleState()
+    private void ShowIdleUI()
     {
-        Debug.Log("进入待机状态");
-        currentState = UIState.Idle;
+        Debug.Log("[UI] 显示待机状态");
         
         // 隐藏结果面板
         if (prizeResultPanel != null)
@@ -229,12 +181,11 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 进入抽奖状态
+    /// 显示抽奖状态UI
     /// </summary>
-    private void EnterDrawingState()
+    private void ShowDrawingUI()
     {
-        Debug.Log("进入抽奖状态");
-        currentState = UIState.Drawing;
+        Debug.Log("[UI] 显示抽奖状态");
         
         // 播放抽奖动画
         if (videoPlayerForPlayer != null && playerRunClip != null)
@@ -246,12 +197,11 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 进入显示结果状态
+    /// 显示结果状态UI
     /// </summary>
-    private void EnterShowingResultState()
+    private void ShowResultUI()
     {
-        Debug.Log("进入显示结果状态");
-        currentState = UIState.ShowingResult;
+        Debug.Log("[UI] 显示结果状态");
         
         // 显示中奖结果面板
         if (prizeResultPanel != null)
@@ -274,12 +224,11 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 进入过渡状态
+    /// 显示过渡状态UI
     /// </summary>
-    private void EnterTransitioningState()
+    private void ShowTransitionUI()
     {
-        Debug.Log("进入过渡状态");
-        currentState = UIState.Transitioning;
+        Debug.Log("[UI] 显示过渡状态");
         
         // 显示过渡幕布
         if (curtainPanel != null)

@@ -19,6 +19,10 @@ public class GameLogicHandler : MonoBehaviour
         public int maxPeopleIndex = 100; // 提供默认值
     }
     
+    // 游戏状态
+    [ShowInInspector, ReadOnly]
+    public GameState CurrentState { get; private set; } = GameState.Idle;
+    
     // 状态变量
     public int CurrentPrizeIndex { get; private set; } = 1;
     public int LastWinnerID = 0;
@@ -75,6 +79,9 @@ public class GameLogicHandler : MonoBehaviour
         
         // 订阅事件
         SubscribeToEvents();
+        
+        // 初始化到待机状态
+        ChangeState(GameState.Idle);
     }
     
     void OnDestroy()
@@ -89,8 +96,11 @@ public class GameLogicHandler : MonoBehaviour
     private void SubscribeToEvents()
     {
         GameEvents.OnPrizeDrawRequested += HandlePrizeDrawRequested;
-        GameEvents.OnPrizeIndexChanged += HandlePrizeIndexChanged;
+        GameEvents.OnPrizeIndexChangeRequested += HandlePrizeIndexChangeRequested;
         GameEvents.OnReloadConfigRequested += HandleReloadConfigRequested;
+        GameEvents.OnRestartRequested += HandleRestartRequested;
+        GameEvents.OnDrawingComplete += HandleDrawingComplete;
+        GameEvents.OnTransitionComplete += HandleTransitionComplete;
     }
     
     /// <summary>
@@ -99,8 +109,11 @@ public class GameLogicHandler : MonoBehaviour
     private void UnsubscribeFromEvents()
     {
         GameEvents.OnPrizeDrawRequested -= HandlePrizeDrawRequested;
-        GameEvents.OnPrizeIndexChanged -= HandlePrizeIndexChanged;
+        GameEvents.OnPrizeIndexChangeRequested -= HandlePrizeIndexChangeRequested;
         GameEvents.OnReloadConfigRequested -= HandleReloadConfigRequested;
+        GameEvents.OnRestartRequested -= HandleRestartRequested;
+        GameEvents.OnDrawingComplete -= HandleDrawingComplete;
+        GameEvents.OnTransitionComplete -= HandleTransitionComplete;
     }
     
     /// <summary>
@@ -108,15 +121,45 @@ public class GameLogicHandler : MonoBehaviour
     /// </summary>
     private void HandlePrizeDrawRequested(int prizeIndex)
     {
+        // 只在待机状态下才允许抽奖
+        if (CurrentState != GameState.Idle)
+        {
+            Debug.LogWarning($"当前状态为 {CurrentState}，无法进行抽奖");
+            return;
+        }
+        
+        // 执行抽奖逻辑
         PrizeDraw();
+        
+        // 切换到抽奖状态
+        ChangeState(GameState.Drawing);
     }
     
     /// <summary>
-    /// 处理奖项索引变更
+    /// 处理奖项索引变更请求
     /// </summary>
-    private void HandlePrizeIndexChanged(int prizeIndex)
+    private void HandlePrizeIndexChangeRequested(int prizeIndex)
     {
+        // 只在待机状态下才允许切换奖项
+        if (CurrentState != GameState.Idle)
+        {
+            Debug.LogWarning($"当前状态为 {CurrentState}，无法切换奖项");
+            return;
+        }
+        
+        // 验证奖项索引有效性
+        if (prizeIndex < 1 || prizeIndex > 4)
+        {
+            Debug.LogWarning($"无效的奖项索引: {prizeIndex}");
+            return;
+        }
+        
+        // 更新奖项索引
         CurrentPrizeIndex = prizeIndex;
+        Debug.Log($"奖项已切换到: {prizeIndex}等奖");
+        
+        // 通知UI更新
+        GameEvents.NotifyPrizeIndexUpdated(prizeIndex);
     }
     
     /// <summary>
@@ -125,6 +168,69 @@ public class GameLogicHandler : MonoBehaviour
     private void HandleReloadConfigRequested()
     {
         ReadFiles();
+    }
+    
+    /// <summary>
+    /// 处理重启请求
+    /// </summary>
+    private void HandleRestartRequested()
+    {
+        // 只在显示结果状态下才允许重启
+        if (CurrentState != GameState.ShowingResult)
+        {
+            Debug.LogWarning($"当前状态为 {CurrentState}，无法重启");
+            return;
+        }
+        
+        // 切换到过渡状态
+        ChangeState(GameState.Transitioning);
+    }
+    
+    /// <summary>
+    /// 处理抽奖动画完成
+    /// </summary>
+    private void HandleDrawingComplete()
+    {
+        // 只在抽奖状态下才处理
+        if (CurrentState != GameState.Drawing)
+        {
+            return;
+        }
+        
+        // 切换到显示结果状态
+        ChangeState(GameState.ShowingResult);
+    }
+    
+    /// <summary>
+    /// 处理过渡动画完成
+    /// </summary>
+    private void HandleTransitionComplete()
+    {
+        // 只在过渡状态下才处理
+        if (CurrentState != GameState.Transitioning)
+        {
+            return;
+        }
+        
+        // 回到待机状态
+        ChangeState(GameState.Idle);
+    }
+    
+    /// <summary>
+    /// 改变游戏状态
+    /// </summary>
+    private void ChangeState(GameState newState)
+    {
+        if (CurrentState == newState)
+        {
+            return;
+        }
+        
+        Debug.Log($"状态切换: {CurrentState} -> {newState}");
+        CurrentState = newState;
+        
+        // 通知所有监听者状态已改变
+        GameEvents.NotifyStateChanged(newState);
     }
     
     void ReadFiles()

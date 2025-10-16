@@ -29,23 +29,23 @@ public class InputHandler : MonoBehaviour
     {
         if (Input.GetKeyDown(_keyCode_Prize1))
         {
-            GameEvents.ChangePrizeIndex(1);
-            Debug.Log("切换到一等奖");
+            GameEvents.RequestPrizeIndexChange(1);
+            Debug.Log("请求切换到一等奖");
         }
         else if (Input.GetKeyDown(_keyCode_Prize2))
         {
-            GameEvents.ChangePrizeIndex(2);
-            Debug.Log("切换到二等奖");
+            GameEvents.RequestPrizeIndexChange(2);
+            Debug.Log("请求切换到二等奖");
         }
         else if (Input.GetKeyDown(_keyCode_Prize3))
         {
-            GameEvents.ChangePrizeIndex(3);
-            Debug.Log("切换到三等奖");
+            GameEvents.RequestPrizeIndexChange(3);
+            Debug.Log("请求切换到三等奖");
         }
         else if (Input.GetKeyDown(_keyCode_Prize4))
         {
-            GameEvents.ChangePrizeIndex(4);
-            Debug.Log("切换到四等奖");
+            GameEvents.RequestPrizeIndexChange(4);
+            Debug.Log("请求切换到四等奖");
         }
     }
     
@@ -70,7 +70,6 @@ public class InputHandler : MonoBehaviour
         if (Input.GetKeyDown(_keyCode_reload))
         {
             GameEvents.RequestReloadConfig();
-            Debug.Log("重新加载配置和黑名单文件。");
         }
     }
 
@@ -82,7 +81,6 @@ public class InputHandler : MonoBehaviour
         if (Input.GetKeyDown(_keyCode_restart))
         {
             GameEvents.RequestRestart();
-            Debug.Log("重新开始一次抽奖。");
         }
     }
 }
