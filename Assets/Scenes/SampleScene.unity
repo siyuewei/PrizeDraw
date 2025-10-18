@@ -168,7 +168,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 47817414}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: 73f4ef4609756ed46ae34cf9752223a5, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: 3fb919a5612e9044a99dddf55b821d2f, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -182,12 +182,14 @@ VideoPlayer:
   m_TimeUpdateMode: 2
   m_PlaybackSpeed: 1
   m_AudioOutputMode: 2
-  m_TargetAudioSources: []
-  m_DirectAudioVolumes: []
+  m_TargetAudioSources:
+  - {fileID: 0}
+  m_DirectAudioVolumes:
+  - 1
   m_Url: 
-  m_EnabledAudioTracks: 
-  m_DirectAudioMutes: 
-  m_ControlledAudioTrackCount: 0
+  m_EnabledAudioTracks: 01
+  m_DirectAudioMutes: 00
+  m_ControlledAudioTrackCount: 1
   m_PlayOnAwake: 1
   m_SkipOnDrop: 0
   m_Looping: 1
@@ -632,7 +634,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 629362653}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: b05dd6d4ec0492540976315c6be19ec9, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: e5f50fccae1dafc42834fa3a1c90b314, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -1393,7 +1395,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1737007981}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: 846d3262165602b4e9d0413185b6437c, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: e6920bd19bdb7534d9a46bd2b9be6b3b, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -1431,7 +1433,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 0e4cc16978ae357409f14ab6b53face1, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -1509,7 +1511,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: bcfcdf352fad193488b73db4138cb382, type: 3}
   - {fileID: 21300000, guid: d95132138cd4cd143a64bc0999f9f59f, type: 3}
   playerIdleClip: {fileID: 32900000, guid: c5ce44f28dc5efb4c9f19d953cd5a657, type: 3}
-  playerRunClip: {fileID: 32900000, guid: 9596dab94025ed643a438c1602171bad, type: 3}
+  playerRunClip: {fileID: 32900000, guid: 4cac1efa090a3ee458f39e7057abd6fd, type: 3}
   videoPlayerForPlayer: {fileID: 497312298}
   prizeResultPanel: {fileID: 1142713407}
   prizeResultText: {fileID: 1963387370}
