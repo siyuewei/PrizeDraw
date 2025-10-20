@@ -24,6 +24,8 @@ public class UIManager : MonoBehaviour
     [Range(0, 1)]
     [Tooltip("抽奖动画播放的百分比")]
     public float percentOfPlayerRunClip = 0.5f; // 抽奖动画播放的百分比
+    public GameObject playerRunBackgroundObject; // 抽奖时背景视频对象
+    public VideoPlayer videoPlayerForPlayerRunBackground; // 抽奖时背景视频播放器
     
     [Header("中奖结果显示配置")]
     public GameObject prizeResultPanel; // 显示中奖结果的面板
@@ -218,6 +220,22 @@ public class UIManager : MonoBehaviour
             videoPlayerForPlayer.sendFrameReadyEvents = true;
             videoPlayerForPlayer.Play();
         }
+        
+        // 显示并播放抽奖背景
+        if (playerRunBackgroundObject != null)
+        {
+            playerRunBackgroundObject.SetActive(true);
+            if (videoPlayerForPlayerRunBackground != null)
+            {
+                // 清除上一次播放的 RenderTexture，避免卡顿
+                ClearVideoPlayerRenderTexture(videoPlayerForPlayerRunBackground);
+                
+                videoPlayerForPlayerRunBackground.isLooping = true;
+                videoPlayerForPlayerRunBackground.Play();
+            }
+        }
+        
+
     }
     
     /// <summary>
@@ -273,6 +291,24 @@ public class UIManager : MonoBehaviour
     #endregion
     
     #region 辅助方法
+    /// <summary>
+    /// 清除视频播放器的 RenderTexture，避免显示上一次播放的残留画面
+    /// </summary>
+    /// <param name="videoPlayer">要清除的视频播放器</param>
+    private void ClearVideoPlayerRenderTexture(VideoPlayer videoPlayer)
+    {
+        if (videoPlayer == null || videoPlayer.targetTexture == null)
+        {
+            return;
+        }
+        
+        RenderTexture rt = videoPlayer.targetTexture;
+        RenderTexture currentRT = RenderTexture.active;
+        RenderTexture.active = rt;
+        GL.Clear(true, true, Color.clear);
+        RenderTexture.active = currentRT;
+    }
+    
     /// <summary>
     /// 检测抽奖动画播放进度
     /// </summary>
@@ -370,6 +406,23 @@ public class UIManager : MonoBehaviour
             videoPlayerForPlayer.clip = playerIdleClip;
             videoPlayerForPlayer.isLooping = true;
             videoPlayerForPlayer.Play();
+        }
+        
+        // 隐藏并停止抽奖背景
+        if (playerRunBackgroundObject != null)
+        {
+            playerRunBackgroundObject.SetActive(false);
+        }
+        
+        if (videoPlayerForPlayerRunBackground != null)
+        {
+            if (videoPlayerForPlayerRunBackground.isPlaying)
+            {
+                videoPlayerForPlayerRunBackground.Stop();
+            }
+            
+            // 清除 RenderTexture，避免下次播放时显示残留画面
+            ClearVideoPlayerRenderTexture(videoPlayerForPlayerRunBackground);
         }
         
         // 更新星星特效到当前奖项
