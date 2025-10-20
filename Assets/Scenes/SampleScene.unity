@@ -158,7 +158,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 1300, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &47817416
 VideoPlayer:
@@ -405,7 +405,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 1300, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &437823459
 VideoPlayer:
@@ -512,7 +512,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 1300, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &497312298
 VideoPlayer:
@@ -622,7 +622,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 1300, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &629362655
 VideoPlayer:
@@ -1274,7 +1274,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 1300, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &1606933642
 VideoPlayer:
@@ -1381,7 +1381,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 1300, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &1737007983
 VideoPlayer:
@@ -1509,7 +1509,7 @@ MonoBehaviour:
   playerIdleClip: {fileID: 32900000, guid: 1f70bbc71843c3540a9528857701a9e3, type: 3}
   playerRunClip: {fileID: 32900000, guid: 4cac1efa090a3ee458f39e7057abd6fd, type: 3}
   videoPlayerForPlayer: {fileID: 497312298}
-  percentOfPlayerRunClip: 0.1
+  percentOfPlayerRunClip: 0.35
   playerRunBackgroundObject: {fileID: 1606933640}
   videoPlayerForPlayerRunBackground: {fileID: 1606933642}
   prizeResultPanel: {fileID: 1142713407}
