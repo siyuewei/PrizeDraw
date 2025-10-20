@@ -30,6 +30,12 @@ public class UIManager : MonoBehaviour
     [Header("两次抽奖之间的过渡幕布")]
     public GameObject curtainPanel; // 过渡幕布
     public VideoPlayer curtainVideoPlayer;
+    public VideoClip curtainCloseClip; // 黑屏关闭动画
+    public VideoClip curtainOpenClip; // 开屏打开动画
+    #endregion
+    
+    #region 私有变量
+    private bool isPlayingCloseCurtain = false; // 标记当前是否正在播放关闭动画
     #endregion
     
     #region Unity生命周期
@@ -142,8 +148,32 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void OnCurtainVideoFinished(VideoPlayer vp)
     {
-        // 通知游戏逻辑：过渡动画已完成
-        GameEvents.NotifyTransitionComplete();
+        if (isPlayingCloseCurtain)
+        {
+            // 第一段黑屏动画结束，重置UI
+            Debug.Log("[UI] 黑屏动画完成，重置UI");
+            ResetAllUI();
+            
+            // 播放第二段开屏动画
+            if (curtainVideoPlayer != null && curtainOpenClip != null)
+            {
+                Debug.Log("[UI] 播放开屏动画");
+                curtainVideoPlayer.clip = curtainOpenClip;
+                curtainVideoPlayer.Play();
+                isPlayingCloseCurtain = false;
+            }
+            else
+            {
+                // 如果没有开屏动画，直接结束过渡
+                GameEvents.NotifyTransitionComplete();
+            }
+        }
+        else
+        {
+            // 第二段开屏动画结束，通知游戏逻辑：过渡动画已完成
+            Debug.Log("[UI] 开屏动画完成，过渡结束");
+            GameEvents.NotifyTransitionComplete();
+        }
     }
     #endregion
     
@@ -155,29 +185,14 @@ public class UIManager : MonoBehaviour
     {
         Debug.Log("[UI] 显示待机状态");
         
-        // 隐藏结果面板
-        if (prizeResultPanel != null)
-        {
-            prizeResultPanel.SetActive(false);
-        }
+        // 重置所有UI到初始状态
+        ResetAllUI();
         
         // 隐藏过渡幕布
         if (curtainPanel != null)
         {
             curtainPanel.SetActive(false);
         }
-        
-        // 播放待机视频
-        if (videoPlayerForPlayer != null && playerIdleClip != null)
-        {
-            videoPlayerForPlayer.clip = playerIdleClip;
-            videoPlayerForPlayer.isLooping = true;
-            videoPlayerForPlayer.Play();
-        }
-        
-        // 更新星星特效
-        int currentPrizeIndex = GameLogicHandler.Instance?.CurrentPrizeIndex ?? 1;
-        UpdateTwinkleEffects(currentPrizeIndex);
     }
     
     /// <summary>
@@ -236,11 +251,14 @@ public class UIManager : MonoBehaviour
             curtainPanel.SetActive(true);
         }
         
-        // 播放过渡动画
-        if (curtainVideoPlayer != null)
+        // 播放第一段黑屏关闭动画
+        if (curtainVideoPlayer != null && curtainCloseClip != null)
         {
+            Debug.Log("[UI] 播放黑屏关闭动画");
+            curtainVideoPlayer.clip = curtainCloseClip;
             curtainVideoPlayer.isLooping = false;
             curtainVideoPlayer.Play();
+            isPlayingCloseCurtain = true;
         }
     }
     #endregion
@@ -259,6 +277,44 @@ public class UIManager : MonoBehaviour
                 twinkleEffects[i].SetActive(i == prizeIndex - 1);
             }
         }
+    }
+    
+    /// <summary>
+    /// 重置所有UI元素到初始状态
+    /// </summary>
+    private void ResetAllUI()
+    {
+        Debug.Log("[UI] 重置所有UI");
+        
+        // 隐藏中奖结果面板
+        if (prizeResultPanel != null)
+        {
+            prizeResultPanel.SetActive(false);
+        }
+        
+        // 清空中奖结果文本
+        if (prizeResultText != null)
+        {
+            prizeResultText.text = "";
+        }
+        
+        // 重置背景图片
+        if (prizeResultImage != null)
+        {
+            prizeResultImage.sprite = null;
+        }
+        
+        // 重置人物视频到待机状态
+        if (videoPlayerForPlayer != null && playerIdleClip != null)
+        {
+            videoPlayerForPlayer.clip = playerIdleClip;
+            videoPlayerForPlayer.isLooping = true;
+            videoPlayerForPlayer.Play();
+        }
+        
+        // 更新星星特效到当前奖项
+        int currentPrizeIndex = GameLogicHandler.Instance?.CurrentPrizeIndex ?? 1;
+        UpdateTwinkleEffects(currentPrizeIndex);
     }
     #endregion
 }

@@ -522,7 +522,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 497312296}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: c5ce44f28dc5efb4c9f19d953cd5a657, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: 1f70bbc71843c3540a9528857701a9e3, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -1241,9 +1241,9 @@ RectTransform:
   m_Father: {fileID: 929758137}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -414.74}
-  m_SizeDelta: {x: -1648.2905, y: -829.4761}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 645, y: 516}
+  m_SizeDelta: {x: 434, y: 401}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1142713409
 MonoBehaviour:
@@ -1648,6 +1648,8 @@ MonoBehaviour:
   prizeResultImage: {fileID: 1142713409}
   curtainPanel: {fileID: 437823457}
   curtainVideoPlayer: {fileID: 437823459}
+  curtainCloseClip: {fileID: 32900000, guid: eccbec6e122647441b90851d02957ad6, type: 3}
+  curtainOpenClip: {fileID: 32900000, guid: d7c7b52a77dfc62489729bba9403f4b9, type: 3}
 --- !u!1 &1963387368
 GameObject:
   m_ObjectHideFlags: 0
