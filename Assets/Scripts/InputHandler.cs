@@ -10,7 +10,7 @@ public class InputHandler : MonoBehaviour
     private readonly KeyCode _keyCode_Prize2 = KeyCode.Alpha2; // 二等奖
     private readonly KeyCode _keyCode_Prize3 = KeyCode.Alpha3; // 三等奖
     private readonly KeyCode _keyCode_Prize4 = KeyCode.Alpha4; // 四等奖
-    private readonly KeyCode _keyCode_PrizeDraw = KeyCode.Space; // 抽奖键
+    private readonly KeyCode _keyCode_PrizeDraw = KeyCode.Return; // 抽奖键
     private readonly KeyCode _keyCode_reload = KeyCode.C; // 重新加载配置和黑名单
     private readonly KeyCode _keyCode_restart = KeyCode.R; //重新开启一次抽奖
 
