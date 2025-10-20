@@ -99,7 +99,7 @@ public class GameLogicHandler : MonoBehaviour
         GameEvents.OnPrizeIndexChangeRequested += HandlePrizeIndexChangeRequested;
         GameEvents.OnReloadConfigRequested += HandleReloadConfigRequested;
         GameEvents.OnRestartRequested += HandleRestartRequested;
-        GameEvents.OnDrawingComplete += HandleDrawingComplete;
+        GameEvents.OnReadyToShowResult += HandleReadyToShowResult;
         GameEvents.OnTransitionComplete += HandleTransitionComplete;
     }
     
@@ -112,7 +112,7 @@ public class GameLogicHandler : MonoBehaviour
         GameEvents.OnPrizeIndexChangeRequested -= HandlePrizeIndexChangeRequested;
         GameEvents.OnReloadConfigRequested -= HandleReloadConfigRequested;
         GameEvents.OnRestartRequested -= HandleRestartRequested;
-        GameEvents.OnDrawingComplete -= HandleDrawingComplete;
+        GameEvents.OnReadyToShowResult -= HandleReadyToShowResult;
         GameEvents.OnTransitionComplete -= HandleTransitionComplete;
     }
     
@@ -196,9 +196,9 @@ public class GameLogicHandler : MonoBehaviour
     }
     
     /// <summary>
-    /// 处理抽奖动画完成
+    /// 处理准备显示结果（抽奖动画已播放到设定百分比）
     /// </summary>
-    private void HandleDrawingComplete()
+    private void HandleReadyToShowResult()
     {
         // 只在抽奖状态下才处理
         if (CurrentState != GameState.Drawing)

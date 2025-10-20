@@ -29,7 +29,7 @@ public static class GameEvents
     public static event Action<int> OnPrizeIndexUpdated;  // 奖项已更新（验证通过）
     
     // UI完成事件（由UIManager发送，GameLogicHandler处理）
-    public static event Action OnDrawingComplete;
+    public static event Action OnReadyToShowResult; // 抽奖动画播放到设定百分比，准备显示结果
     public static event Action OnTransitionComplete;
     
     // 状态变化通知
@@ -66,9 +66,9 @@ public static class GameEvents
     }
     
     // UIManager调用的完成通知方法
-    public static void NotifyDrawingComplete()
+    public static void NotifyReadyToShowResult()
     {
-        OnDrawingComplete?.Invoke();
+        OnReadyToShowResult?.Invoke();
     }
     
     public static void NotifyTransitionComplete()

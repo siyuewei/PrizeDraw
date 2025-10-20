@@ -21,6 +21,9 @@ public class UIManager : MonoBehaviour
     public VideoClip playerIdleClip; // 播放器空闲时的视频
     public VideoClip playerRunClip; // 抽奖时的视频
     public VideoPlayer videoPlayerForPlayer;
+    [Range(0, 1)]
+    [Tooltip("抽奖动画播放的百分比")]
+    public float percentOfPlayerRunClip = 0.5f; // 抽奖动画播放的百分比
     
     [Header("中奖结果显示配置")]
     public GameObject prizeResultPanel; // 显示中奖结果的面板
@@ -36,6 +39,7 @@ public class UIManager : MonoBehaviour
     
     #region 私有变量
     private bool isPlayingCloseCurtain = false; // 标记当前是否正在播放关闭动画
+    private bool hasNotifiedDrawingComplete = false; // 标记是否已通知抽奖完成（防止重复通知）
     #endregion
     
     #region Unity生命周期
@@ -44,6 +48,7 @@ public class UIManager : MonoBehaviour
         // 订阅事件
         SubscribeToEvents();
     }
+    
     
     void OnDestroy()
     {
@@ -64,10 +69,10 @@ public class UIManager : MonoBehaviour
         // 订阅奖项更新事件（由GameLogicHandler验证后发送）
         GameEvents.OnPrizeIndexUpdated += HandlePrizeIndexUpdated;
         
-        // 订阅视频播放器的结束事件
+        // 订阅视频播放器的事件
         if (videoPlayerForPlayer != null)
         {
-            videoPlayerForPlayer.loopPointReached += OnPlayerVideoFinished;
+            videoPlayerForPlayer.frameReady += OnPlayerFrameReady; // 每帧准备好时检查进度
         }
         
         if (curtainVideoPlayer != null)
@@ -90,7 +95,7 @@ public class UIManager : MonoBehaviour
         // 取消订阅视频播放器事件
         if (videoPlayerForPlayer != null)
         {
-            videoPlayerForPlayer.loopPointReached -= OnPlayerVideoFinished;
+            videoPlayerForPlayer.frameReady -= OnPlayerFrameReady;
         }
         
         if (curtainVideoPlayer != null)
@@ -135,12 +140,12 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 当玩家动画视频播放完毕时调用
+    /// 当玩家视频的每一帧准备好时调用，用于检测播放进度
     /// </summary>
-    private void OnPlayerVideoFinished(VideoPlayer vp)
+    private void OnPlayerFrameReady(VideoPlayer vp, long frameIdx)
     {
-        // 通知游戏逻辑：抽奖动画已完成
-        GameEvents.NotifyDrawingComplete();
+        // 检测是否达到设定的播放百分比
+        CheckDrawingAnimationProgress();
     }
     
     /// <summary>
@@ -202,11 +207,15 @@ public class UIManager : MonoBehaviour
     {
         Debug.Log("[UI] 显示抽奖状态");
         
+        // 重置抽奖完成标志
+        hasNotifiedDrawingComplete = false;
+        
         // 播放抽奖动画
         if (videoPlayerForPlayer != null && playerRunClip != null)
         {
             videoPlayerForPlayer.clip = playerRunClip;
             videoPlayerForPlayer.isLooping = false;
+            videoPlayerForPlayer.sendFrameReadyEvents = true;
             videoPlayerForPlayer.Play();
         }
     }
@@ -264,6 +273,57 @@ public class UIManager : MonoBehaviour
     #endregion
     
     #region 辅助方法
+    /// <summary>
+    /// 检测抽奖动画播放进度
+    /// </summary>
+    private void CheckDrawingAnimationProgress()
+    {
+        // 只在抽奖状态下检测
+        if (GameLogicHandler.Instance?.CurrentState != GameState.Drawing)
+        {
+            return;
+        }
+        
+        // 如果已经通知过，就不再检测
+        if (hasNotifiedDrawingComplete)
+        {
+            return;
+        }
+        
+        // 检查视频播放器和视频片段是否有效
+        if (videoPlayerForPlayer == null || videoPlayerForPlayer.clip == null)
+        {
+            return;
+        }
+        
+        // 检查是否正在播放
+        if (!videoPlayerForPlayer.isPlaying)
+        {
+            return;
+        }
+        
+        // 计算当前播放进度百分比
+        double currentTime = videoPlayerForPlayer.time;
+        double totalTime = videoPlayerForPlayer.clip.length;
+
+        
+        if (totalTime <= 0)
+        {
+            return;
+        }
+        
+        float currentProgress = (float)(currentTime / totalTime);
+        
+        // 如果播放进度达到或超过设定的百分比，触发状态转换
+        if (currentProgress >= percentOfPlayerRunClip)
+        {
+            Debug.Log($"[UI] 抽奖动画已播放到 {currentProgress * 100:F1}%（设定值：{percentOfPlayerRunClip * 100:F1}%），准备显示结果");
+            hasNotifiedDrawingComplete = true;
+            videoPlayerForPlayer.sendFrameReadyEvents = false;
+            GameEvents.NotifyReadyToShowResult();
+        }
+    }
+    
     /// <summary>
     /// 更新星星特效显示
     /// </summary>
