@@ -168,7 +168,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 47817414}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: 0108db89da3413844a6525468b1cc301, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: ab99151249e1b774fa65b6bab2e06056, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -1507,7 +1507,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: bcfcdf352fad193488b73db4138cb382, type: 3}
   - {fileID: 21300000, guid: d95132138cd4cd143a64bc0999f9f59f, type: 3}
   playerIdleClip: {fileID: 32900000, guid: 1f70bbc71843c3540a9528857701a9e3, type: 3}
-  playerRunClip: {fileID: 32900000, guid: 63e1c02848307944d961cc79a8f853d1, type: 3}
+  playerRunClip: {fileID: 32900000, guid: 4cac1efa090a3ee458f39e7057abd6fd, type: 3}
   videoPlayerForPlayer: {fileID: 497312298}
   percentOfPlayerRunClip: 0.1
   playerRunBackgroundObject: {fileID: 1606933640}
