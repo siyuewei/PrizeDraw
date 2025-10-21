@@ -31,7 +31,6 @@ public partial class UIManager : MonoBehaviour
     public GameObject prizeResultPanel; // 显示中奖结果的面板
     public TextMeshProUGUI prizeResultText; // 显示中奖结果的ID
     public Image prizeResultImage;
-    public GameObject speicalEffectForPrize;  // 中奖结果的特殊效果对象（如烟花等）
     
     [Header("两次抽奖之间的过渡幕布")]
     public GameObject curtainPanel; // 过渡幕布
@@ -262,12 +261,6 @@ public partial class UIManager : MonoBehaviour
         {
             prizeResultImage.sprite = prizeResultBackgrounds[prizeIndex - 1];
         }
-        
-        // // 显示特殊效果
-        // if (speicalEffectForPrize != null)
-        // {
-        //     GameObject.Instantiate(speicalEffectForPrize, prizeResultPanel.transform);
-        // }
     }
     
     /// <summary>
