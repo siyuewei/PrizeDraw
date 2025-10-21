@@ -13,25 +13,25 @@ public partial class GameLogicHandler
         ReadConfigFile();
         ReadBlackListFile();
         LoadDrawResult();
-        availablePeopleCount = CheckAvailablePeopleCount();
+        commonAvailablePeopleCount = CheckCommonAvailablePeopleCount();
     }
     
     // 检查可用人数
-    private int CheckAvailablePeopleCount()
+    private int CheckCommonAvailablePeopleCount()
     {
         // 检查配置逻辑
-        if (minPeopleIndex > maxPeopleIndex)
+        if (configData.commonMinPeopleIndex > configData.commonMaxPeopleIndex)
         {
             Debug.LogError("配置错误：最小编号大于最大编号。请检查 config.json。");
             return 0;
         }
         
         // 计算总人数
-        int totalPeople = maxPeopleIndex - minPeopleIndex + 1;
+        int totalPeople = configData.commonMaxPeopleIndex - configData.commonMinPeopleIndex + 1;
         
         // 计算可用人数
         int availableCount = 0;
-        for (int i = minPeopleIndex; i <= maxPeopleIndex; i++)
+        for (int i = configData.commonMinPeopleIndex; i <= configData.commonMaxPeopleIndex; i++)
         {
             if (!blackList.Contains(i))
             {
@@ -67,13 +67,13 @@ public partial class GameLogicHandler
                     if (int.TryParse(trimmedLine, out int blackListNumber))
                     {
                         // 仅添加在合法范围内的黑名单编号
-                        if (blackListNumber >= minPeopleIndex && blackListNumber <= maxPeopleIndex)
+                        if (blackListNumber >= configData.commonMinPeopleIndex && blackListNumber <= configData.commonMaxPeopleIndex)
                         {
                             blackList.Add(blackListNumber);
                         }
                         else
                         {
-                            Debug.LogWarning($"黑名单编号 {blackListNumber} 超出当前配置的人员范围 ({minPeopleIndex} - {maxPeopleIndex})，已忽略。");
+                            Debug.LogWarning($"黑名单编号 {blackListNumber} 超出当前配置的人员范围 ({configData.commonMinPeopleIndex} - {configData.commonMaxPeopleIndex})，已忽略。");
                         }
                     }
                     else
@@ -97,8 +97,6 @@ public partial class GameLogicHandler
     
     void ReadConfigFile()
     {
-        ConfigData configData = new ConfigData(); // 初始化一个带有默认值的对象
-        
         try
         {
             if (File.Exists(configFilePath))
@@ -109,9 +107,7 @@ public partial class GameLogicHandler
                 if (loadedConfig != null)
                 {
                     configData = loadedConfig;
-                    minPeopleIndex = configData.minPeopleIndex;
-                    maxPeopleIndex = configData.maxPeopleIndex;
-                    Debug.Log($"配置文件读取成功，人员编号范围：{minPeopleIndex} - {maxPeopleIndex}");
+                    Debug.Log($"配置文件读取成功，人员编号范围：{configData.commonMinPeopleIndex} - {configData.commonMaxPeopleIndex}");
                 }
                 else
                 {
@@ -157,19 +153,27 @@ public partial class GameLogicHandler
                     drawResultData = loadedData;
                     
                     // 重建drawnPeopleIndices集合
-                    drawnPeopleIndices.Clear();
+                    commonWinnerIndices.Clear();
+                    specialWinnerIndices.Clear();
                     foreach (var entry in drawResultData.prizeWinners)
                     {
                         if (entry.winnerIds != null)
                         {
                             foreach (int winnerId in entry.winnerIds)
                             {
-                                drawnPeopleIndices.Add(winnerId);
+                                if (entry.prizeIndex == configData.specialPrizeIndex)
+                                {
+                                    specialWinnerIndices.Add(winnerId);
+                                }
+                                else
+                                {
+                                    commonWinnerIndices.Add(winnerId);
+                                }
                             }
                         }
                     }
                     
-                    Debug.Log($"抽奖结果加载成功。已中奖人数: {drawnPeopleIndices.Count}");
+                    Debug.Log($"抽奖结果加载成功。普通奖已中奖人数: {commonWinnerIndices.Count}，特别奖已中奖人数: {specialWinnerIndices.Count}");
                 }
                 else
                 {
@@ -200,7 +204,8 @@ public partial class GameLogicHandler
         }
         
         // 清除已中奖人员列表和中奖记录
-        drawnPeopleIndices.Clear();
+        commonWinnerIndices.Clear();
+        specialWinnerIndices.Clear();
         drawResultData.prizeWinners.Clear();
         
         // 删除抽奖结果文件
@@ -222,9 +227,93 @@ public partial class GameLogicHandler
     
     void PrizeDraw()
     {
-        if (availablePeopleCount <= 0) return; // 没有可用人数，直接退出
+        // 判断当前是否是特别奖
+        bool isSpecialPrize = (CurrentPrizeIndex == configData.specialPrizeIndex);
+        
+        if (isSpecialPrize)
+        {
+            // 特别奖抽奖逻辑
+            DrawSpecialPrize();
+        }
+        else
+        {
+            // 普通奖抽奖逻辑
+            DrawCommonPrize();
+        }
+    }
+    
+    /// <summary>
+    /// 特别奖抽奖逻辑
+    /// </summary>
+    void DrawSpecialPrize()
+    {
+        // 计算特别奖可用人数
+        int specialTotalPeople = configData.specialMaxPeopleIndex - configData.specialMinPeopleIndex + 1;
+        int specialAvailableCount = specialTotalPeople - specialWinnerIndices.Count;
+        
+        if (specialAvailableCount <= 0)
+        {
+            Debug.LogWarning("所有特别奖人员都已被抽中，无法继续抽奖。");
+            return;
+        }
+        
+        int drawnIndex;
+        int attemptCount = 0;
+        const int maxAttempts = 10000;
+        
+        do
+        {
+            // 在特别奖范围内随机抽取
+            drawnIndex = Random.Range(configData.specialMinPeopleIndex, configData.specialMaxPeopleIndex + 1);
+            attemptCount++;
+            
+            if (attemptCount > maxAttempts)
+            {
+                Debug.LogError("特别奖抽奖尝试次数过多，可能存在逻辑错误或配置问题。已停止抽奖。");
+                return;
+            }
+            
+        } while (specialWinnerIndices.Contains(drawnIndex)); // 只检查特别奖的中奖记录，不考虑黑名单
+        
+        LastWinnerID = drawnIndex;
+        // 将中奖人添加到特别奖中奖集合
+        specialWinnerIndices.Add(LastWinnerID);
+        
+        // 将中奖人添加到对应奖项的列表中
+        PrizeWinnerEntry existingEntry = drawResultData.prizeWinners.Find(entry => entry.prizeIndex == CurrentPrizeIndex);
+        if (existingEntry != null)
+        {
+            existingEntry.winnerIds.Add(LastWinnerID);
+        }
+        else
+        {
+            drawResultData.prizeWinners.Add(new PrizeWinnerEntry 
+            { 
+                prizeIndex = CurrentPrizeIndex, 
+                winnerIds = new List<int> { LastWinnerID } 
+            });
+        }
+        
+        string logString = $"抽奖键按下，当前奖项为特别奖（第 {CurrentPrizeIndex} 等奖），中奖号码为：{LastWinnerID}。 " +
+                     $"特别奖已中奖人数：{specialWinnerIndices.Count}";
+        Debug.Log(logString);
+        
+        // 保存抽奖结果
+        SaveDrawResult();
+    }
+    
+    /// <summary>
+    /// 普通奖抽奖逻辑
+    /// </summary>
+    void DrawCommonPrize()
+    {
+        if (commonAvailablePeopleCount <= 0)
+        {
+            Debug.LogWarning("没有可用人数，无法进行抽奖。");
+            return;
+        }
 
-        int totalPossibleDraws = availablePeopleCount - drawnPeopleIndices.Count;
+        int totalPossibleDraws = commonAvailablePeopleCount - commonWinnerIndices.Count;
 
         if (totalPossibleDraws <= 0)
         {
@@ -233,41 +322,35 @@ public partial class GameLogicHandler
         }
 
         int drawnIndex;
-        // 添加计数器，防止在极端情况下进入死循环
         int attemptCount = 0; 
-        const int maxAttempts = 10000; // 设置最大尝试次数
+        const int maxAttempts = 10000;
 
         do
         {
-            // 在 [minPeopleIndex, maxPeopleIndex] 范围内随机抽取一个人
-            // Random.Range(int min, int max) 是包含 min 但不包含 max 的，因此需要 +1
-            drawnIndex = Random.Range(minPeopleIndex, maxPeopleIndex + 1);
+            // 在普通奖范围内随机抽取
+            drawnIndex = Random.Range(configData.commonMinPeopleIndex, configData.commonMaxPeopleIndex + 1);
             attemptCount++;
 
-            // 检查是否超出尝试次数（尽管逻辑上不应发生，但这是防御性编程）
             if (attemptCount > maxAttempts)
             {
                 Debug.LogError("抽奖尝试次数过多，可能存在逻辑错误或配置问题。已停止抽奖。");
                 return;
             }
             
-        } while (drawnPeopleIndices.Contains(drawnIndex) || blackList.Contains(drawnIndex));
+        } while (commonWinnerIndices.Contains(drawnIndex) || blackList.Contains(drawnIndex)); // 检查普通奖中奖记录和黑名单
 
         LastWinnerID = drawnIndex;
-        // 将中奖人添加到已中奖集合
-        drawnPeopleIndices.Add(LastWinnerID);
+        // 将中奖人添加到普通奖中奖集合
+        commonWinnerIndices.Add(LastWinnerID);
         
         // 将中奖人添加到对应奖项的列表中
-        // 查找是否已有该奖项的entry
         PrizeWinnerEntry existingEntry = drawResultData.prizeWinners.Find(entry => entry.prizeIndex == CurrentPrizeIndex);
         if (existingEntry != null)
         {
-            // 如果已存在，就添加到现有的winnerIds列表中
             existingEntry.winnerIds.Add(LastWinnerID);
         }
         else
         {
-            // 如果不存在，创建新的entry
             drawResultData.prizeWinners.Add(new PrizeWinnerEntry 
             { 
                 prizeIndex = CurrentPrizeIndex, 
@@ -276,7 +359,7 @@ public partial class GameLogicHandler
         }
         
         string logString = $"抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{LastWinnerID}。 " +
-                     $"已中奖人数：{drawnPeopleIndices.Count}";
+                     $"普通奖已中奖人数：{commonWinnerIndices.Count}";
         Debug.Log(logString);
         
         // 保存抽奖结果

@@ -1,4 +1,7 @@
 {
-  "minPeopleNumber": 1,
-  "maxPeopleNumber": 100
+    "commonMinPeopleIndex": 52101,
+    "commonMaxPeopleIndex": 52201,
+    "specialPrizeIndex": 2,
+    "specialMinPeopleIndex": 1,
+    "specialMaxPeopleIndex": 100
 }
