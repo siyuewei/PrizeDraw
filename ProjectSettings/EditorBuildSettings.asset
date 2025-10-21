@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Epic Toon FX/Demo/Scenes/etfx_explosions.unity
+    guid: f91c322868183cc4a96eb6242e73deac
   m_configObjects: {}
