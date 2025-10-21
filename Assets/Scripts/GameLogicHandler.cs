@@ -19,6 +19,20 @@ public class GameLogicHandler : MonoBehaviour
         public int maxPeopleIndex = 100; // 提供默认值
     }
     
+    // 用于序列化单个奖项的中奖者列表
+    [System.Serializable]
+    public class PrizeWinnerEntry
+    {
+        public int prizeIndex; // 奖项索引
+        public List<int> winnerIds; // 中奖者ID列表
+    }
+
+    [System.Serializable]
+    public class DrawResultData
+    {
+        public List<PrizeWinnerEntry> prizeWinners = new List<PrizeWinnerEntry>();
+    }
+    
     // 游戏状态
     [ShowInInspector, ReadOnly]
     public GameState CurrentState { get; private set; } = GameState.Idle;
@@ -34,12 +48,16 @@ public class GameLogicHandler : MonoBehaviour
     // 存储已中奖的人的编号，使用HashSet提高查找效率
     private readonly HashSet<int> drawnPeopleIndices = new HashSet<int>();
     
+    // 运行过程中存储
+    private DrawResultData drawResultData = new DrawResultData();
+
     // 将黑名单改为 HashSet，提高查找效率
     private readonly HashSet<int> blackList = new HashSet<int>();
 
     // 文件路径
     private string blackListFilePath;
     private string configFilePath;
+    private string drawResultFilePath; // 抽奖结果文件路径
     
     private int availablePeopleCount = 0; // 可用人数
     
@@ -47,6 +65,12 @@ public class GameLogicHandler : MonoBehaviour
     void PrizeDrawButton()
     {
         PrizeDraw();
+    }
+
+    [Button("Clear Draw History")]
+    void ClearDrawHistoryButton()
+    {
+        ClearDrawHistory();
     }
 
     void Awake()
@@ -69,10 +93,11 @@ public class GameLogicHandler : MonoBehaviour
         // 统一设置文件路径
         blackListFilePath = Path.Combine(Application.dataPath, "blacklist.txt");
         configFilePath = Path.Combine(Application.dataPath, "config.json");
+        drawResultFilePath = Path.Combine(Application.dataPath, "drawResult.json");
         
         ReadFiles();
         
-        Debug.Log($"抽奖系统启动。人员范围: {minPeopleIndex} - {maxPeopleIndex}。黑名单人数: {blackList.Count}。");
+        Debug.Log($"抽奖系统启动。人员范围: {minPeopleIndex} - {maxPeopleIndex}。黑名单人数: {blackList.Count}。已中奖人数: {drawnPeopleIndices.Count}。");
         
         // 首次检查可用人数
         CheckAvailablePeopleCount();
@@ -246,6 +271,7 @@ public class GameLogicHandler : MonoBehaviour
     {
         ReadConfigFile();
         ReadBlackListFile();
+        LoadDrawResult();
         availablePeopleCount = CheckAvailablePeopleCount();
     }
     
@@ -365,6 +391,94 @@ public class GameLogicHandler : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// 保存抽奖结果到文件
+    /// </summary>
+    void SaveDrawResult()
+    {
+        string json = JsonUtility.ToJson(drawResultData, true);
+        File.WriteAllText(drawResultFilePath, json);
+    }
+    
+    /// <summary>
+    /// 从文件加载抽奖结果
+    /// </summary>
+    void LoadDrawResult()
+    {
+        if (File.Exists(drawResultFilePath))
+        {
+            try
+            {
+                string jsonString = File.ReadAllText(drawResultFilePath);
+                DrawResultData loadedData = JsonUtility.FromJson<DrawResultData>(jsonString);
+                if (loadedData != null && loadedData.prizeWinners != null)
+                {
+                    drawResultData = loadedData;
+                    
+                    // 重建drawnPeopleIndices集合
+                    drawnPeopleIndices.Clear();
+                    foreach (var entry in drawResultData.prizeWinners)
+                    {
+                        if (entry.winnerIds != null)
+                        {
+                            foreach (int winnerId in entry.winnerIds)
+                            {
+                                drawnPeopleIndices.Add(winnerId);
+                            }
+                        }
+                    }
+                    
+                    Debug.Log($"抽奖结果加载成功。已中奖人数: {drawnPeopleIndices.Count}");
+                }
+                else
+                {
+                    Debug.LogWarning("抽奖结果文件为空或格式错误，将从初始状态开始。");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"加载抽奖结果失败：{e.Message}。将从初始状态开始。");
+            }
+        }
+        else
+        {
+           Debug.Log("未找到抽奖结果文件，将从初始状态开始。");
+        }
+    }
+    
+    /// <summary>
+    /// 清除抽奖历史记录
+    /// </summary>
+    public void ClearDrawHistory()
+    {
+        // 只在待机状态下才允许清除历史
+        if (CurrentState != GameState.Idle)
+        {
+            Debug.LogWarning($"当前状态为 {CurrentState}，无法清除抽奖历史");
+            return;
+        }
+        
+        // 清除已中奖人员列表和中奖记录
+        drawnPeopleIndices.Clear();
+        drawResultData.prizeWinners.Clear();
+        
+        // 删除抽奖结果文件
+        try
+        {
+            if (File.Exists(drawResultFilePath))
+            {
+                File.Delete(drawResultFilePath);
+            }
+
+            Debug.Log("抽奖历史已清除");
+            
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"清除抽奖历史失败：{e.Message}");
+        }
+    }
+    
     void PrizeDraw()
     {
         if (availablePeopleCount <= 0) return; // 没有可用人数，直接退出
@@ -402,8 +516,29 @@ public class GameLogicHandler : MonoBehaviour
         // 将中奖人添加到已中奖集合
         drawnPeopleIndices.Add(LastWinnerID);
         
+        // 将中奖人添加到对应奖项的列表中
+        // 查找是否已有该奖项的entry
+        PrizeWinnerEntry existingEntry = drawResultData.prizeWinners.Find(entry => entry.prizeIndex == CurrentPrizeIndex);
+        if (existingEntry != null)
+        {
+            // 如果已存在，就添加到现有的winnerIds列表中
+            existingEntry.winnerIds.Add(LastWinnerID);
+        }
+        else
+        {
+            // 如果不存在，创建新的entry
+            drawResultData.prizeWinners.Add(new PrizeWinnerEntry 
+            { 
+                prizeIndex = CurrentPrizeIndex, 
+                winnerIds = new List<int> { LastWinnerID } 
+            });
+        }
+        
         string logString = $"抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{LastWinnerID}。 " +
                      $"已中奖人数：{drawnPeopleIndices.Count}";
         Debug.Log(logString);
+        
+        // 保存抽奖结果
+        SaveDrawResult();
     }
 }
