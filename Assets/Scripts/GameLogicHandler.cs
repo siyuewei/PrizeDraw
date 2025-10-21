@@ -15,8 +15,11 @@ public partial class GameLogicHandler : MonoBehaviour
     [System.Serializable]
     private class ConfigData
     {
-        public int minPeopleIndex = 1; // 提供默认值
-        public int maxPeopleIndex = 100; // 提供默认值
+        public int commonMinPeopleIndex = 1; // 提供默认值
+        public int commonMaxPeopleIndex = 100; // 提供默认值
+        public int specialPrizeIndex = 2; // 提供默认值
+        public int specialMinPeopleIndex = 1; // 提供默认值
+        public int specialMaxPeopleIndex = 100; // 提供默认值
     }
     
     // 用于序列化单个奖项的中奖者列表
@@ -42,11 +45,11 @@ public partial class GameLogicHandler : MonoBehaviour
     public int LastWinnerID = 0;
     
     // 配置变量
-    private int minPeopleIndex = 1;
-    private int maxPeopleIndex = 100;
+    private ConfigData configData = new ConfigData();
     
     // 存储已中奖的人的编号，使用HashSet提高查找效率
-    private readonly HashSet<int> drawnPeopleIndices = new HashSet<int>();
+    private readonly HashSet<int> commonWinnerIndices = new HashSet<int>();
+    private readonly HashSet<int> specialWinnerIndices = new HashSet<int>();
     
     // 运行过程中存储
     private DrawResultData drawResultData = new DrawResultData();
@@ -59,7 +62,7 @@ public partial class GameLogicHandler : MonoBehaviour
     private string configFilePath;
     private string drawResultFilePath; // 抽奖结果文件路径
     
-    private int availablePeopleCount = 0; // 可用人数
+    private int commonAvailablePeopleCount = 0; // 可用人数
     
     [Button("Prize Draw")]
     void PrizeDrawButton()
@@ -97,10 +100,10 @@ public partial class GameLogicHandler : MonoBehaviour
         
         ReadFiles();
         
-        Debug.Log($"抽奖系统启动。人员范围: {minPeopleIndex} - {maxPeopleIndex}。黑名单人数: {blackList.Count}。已中奖人数: {drawnPeopleIndices.Count}。");
+        Debug.Log($"抽奖系统启动。人员范围: {configData.commonMinPeopleIndex} - {configData.commonMaxPeopleIndex}。黑名单人数: {blackList.Count}。已中奖人数: {commonWinnerIndices.Count}。");
         
         // 首次检查可用人数
-        CheckAvailablePeopleCount();
+        CheckCommonAvailablePeopleCount();
         
         // 订阅事件
         SubscribeToEvents();
