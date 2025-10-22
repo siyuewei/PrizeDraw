@@ -17,6 +17,9 @@ public partial class UIManager : MonoBehaviour
     [Header("中奖结果背景图片")]
     public List<Sprite> prizeResultBackgrounds; // 对应不同奖项的背景图片
     
+    [Header("中奖结果背景图Color")]
+    public List<Color> prizeResultColors;
+    
     [Header("人物动画配置")]
     public VideoClip playerIdleClip; // 播放器空闲时的视频
     public VideoClip playerRunClip; // 抽奖时的视频
@@ -31,6 +34,7 @@ public partial class UIManager : MonoBehaviour
     public GameObject prizeResultPanel; // 显示中奖结果的面板
     public TextMeshProUGUI prizeResultText; // 显示中奖结果的ID
     public Image prizeResultImage;
+    public Image prizeResultBackgroundImage;
     
     [Header("两次抽奖之间的过渡幕布")]
     public GameObject curtainPanel; // 过渡幕布
@@ -260,6 +264,12 @@ public partial class UIManager : MonoBehaviour
         if (prizeResultImage != null && prizeIndex > 0 && prizeIndex <= prizeResultBackgrounds.Count)
         {
             prizeResultImage.sprite = prizeResultBackgrounds[prizeIndex - 1];
+        }
+        
+        // 更新背景颜色
+        if (prizeResultBackgroundImage != null && prizeIndex > 0 && prizeIndex <= prizeResultColors.Count)
+        {
+            prizeResultBackgroundImage.color = prizeResultColors[prizeIndex - 1];
         }
     }
     

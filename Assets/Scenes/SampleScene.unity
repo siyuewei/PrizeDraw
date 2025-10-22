@@ -480,7 +480,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1300, y: 1080}
+  m_SizeDelta: {x: 1440, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &437823459
 VideoPlayer:
@@ -697,7 +697,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1300, y: 1080}
+  m_SizeDelta: {x: 1440, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &629362655
 VideoPlayer:
@@ -1437,7 +1437,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.05882353}
+  m_Color: {r: 0.98303974, g: 1, b: 0.53396225, a: 0.11764706}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1498,7 +1498,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.000020027}
-  m_SizeDelta: {x: 1300, y: 1080}
+  m_SizeDelta: {x: 1440, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!328 &1606933642
 VideoPlayer:
@@ -1871,19 +1871,25 @@ MonoBehaviour:
   - {fileID: 943225583}
   - {fileID: 1342851359}
   prizeResultBackgrounds:
-  - {fileID: 21300000, guid: eba5e85a70b0d9f42be264be80fd49de, type: 3}
+  - {fileID: 21300000, guid: 48881ccb74b24de4493ae9a9d270ae0c, type: 3}
   - {fileID: 21300000, guid: 1aad25719e3ecae4bbcf6bb504e1e9e8, type: 3}
   - {fileID: 21300000, guid: aa1c0352b1e453e478dd2f48c50c3f8c, type: 3}
   - {fileID: 21300000, guid: eba5e85a70b0d9f42be264be80fd49de, type: 3}
+  prizeResultColors:
+  - {r: 1, g: 1, b: 1, a: 0.11764706}
+  - {r: 0.9647059, g: 1, b: 0.49803922, a: 0.11764706}
+  - {r: 0.9843137, g: 1, b: 0.5372549, a: 0.11764706}
+  - {r: 1, g: 1, b: 1, a: 0.078431375}
   playerIdleClip: {fileID: 32900000, guid: 1f70bbc71843c3540a9528857701a9e3, type: 3}
   playerRunClip: {fileID: 32900000, guid: 4cac1efa090a3ee458f39e7057abd6fd, type: 3}
   videoPlayerForPlayer: {fileID: 497312298}
-  percentOfPlayerRunClip: 0.4
+  percentOfPlayerRunClip: 0.2
   playerRunBackgroundObject: {fileID: 1606933640}
   videoPlayerForPlayerRunBackground: {fileID: 1606933642}
   prizeResultPanel: {fileID: 1142713407}
   prizeResultText: {fileID: 1963387370}
   prizeResultImage: {fileID: 386790772}
+  prizeResultBackgroundImage: {fileID: 1528994909}
   curtainPanel: {fileID: 437823457}
   curtainVideoPlayer: {fileID: 437823459}
   curtainCloseClip: {fileID: 32900000, guid: eccbec6e122647441b90851d02957ad6, type: 3}
@@ -1954,8 +1960,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
