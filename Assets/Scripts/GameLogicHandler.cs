@@ -61,6 +61,7 @@ public partial class GameLogicHandler : MonoBehaviour
     private string blackListFilePath;
     private string configFilePath;
     private string drawResultFilePath; // 抽奖结果文件路径
+    private string mustWinListFilePath; // 必中榜单文件路径
     
     private int commonAvailablePeopleCount = 0; // 可用人数
     
@@ -97,6 +98,7 @@ public partial class GameLogicHandler : MonoBehaviour
         blackListFilePath = Path.Combine(Application.dataPath, "blacklist.txt");
         configFilePath = Path.Combine(Application.dataPath, "config.json");
         drawResultFilePath = Path.Combine(Application.dataPath, "drawResult.json");
+        mustWinListFilePath = Path.Combine(Application.dataPath, "mustwinlist.txt");
         
         ReadFiles();
         

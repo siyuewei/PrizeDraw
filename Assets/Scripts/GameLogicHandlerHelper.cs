@@ -15,7 +15,7 @@ public partial class GameLogicHandler
         LoadDrawResult();
         commonAvailablePeopleCount = CheckCommonAvailablePeopleCount();
     }
-    
+
     // 检查可用人数
     private int CheckCommonAvailablePeopleCount()
     {
@@ -28,7 +28,7 @@ public partial class GameLogicHandler
         
         // 计算总人数
         int totalPeople = configData.commonMaxPeopleIndex - configData.commonMinPeopleIndex + 1;
-        
+
         // 计算可用人数
         int availableCount = 0;
         for (int i = configData.commonMinPeopleIndex; i <= configData.commonMaxPeopleIndex; i++)
@@ -93,6 +93,51 @@ public partial class GameLogicHandler
         {
             Debug.LogError($"读取黑名单文件失败：{e.Message}");
         }
+    }
+    
+    /// <summary>
+    /// 读取必中榜单文件
+    /// </summary>
+    List<int> ReadMustWinListFile()
+    {
+        List<int> mustWinList = new List<int>();
+        
+        try
+        {
+            if (File.Exists(mustWinListFilePath))
+            {
+                // 使用 File.ReadAllLines 读取所有行
+                string[] lines = File.ReadAllLines(mustWinListFilePath);
+                
+                foreach (string line in lines)
+                {
+                    // 忽略空行或只包含空格的行
+                    string trimmedLine = line.Trim();
+                    if (string.IsNullOrEmpty(trimmedLine)) continue;
+                    
+                    if (int.TryParse(trimmedLine, out int mustWinNumber))
+                    {
+                        mustWinList.Add(mustWinNumber);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"必中榜单文件包含非数字行：'{line}'，已跳过。");
+                    }
+                }
+                
+                Debug.Log($"必中榜单读取成功，共 {mustWinList.Count} 人。");
+            }
+            else
+            {
+                Debug.Log($"必中榜单文件不存在：{mustWinListFilePath}，将进行正常抽奖。");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"读取必中榜单文件失败：{e.Message}");
+        }
+        
+        return mustWinList;
     }
     
     void ReadConfigFile()
@@ -321,23 +366,62 @@ public partial class GameLogicHandler
             return;
         }
 
-        int drawnIndex;
-        int attemptCount = 0; 
-        const int maxAttempts = 10000;
-
-        do
+        // 每次抽奖都重新读取必中榜单
+        List<int> mustWinList = ReadMustWinListFile();
+        
+        int drawnIndex = -1;
+        bool drawnFromMustWinList = false;
+        
+        // 先尝试从必中榜单中抽取
+        if (mustWinList.Count > 0)
         {
-            // 在普通奖范围内随机抽取
-            drawnIndex = Random.Range(configData.commonMinPeopleIndex, configData.commonMaxPeopleIndex + 1);
-            attemptCount++;
-
-            if (attemptCount > maxAttempts)
+            // 筛选出符合条件的必中人员：在index范围内、未中奖、不在黑名单中
+            List<int> validMustWinList = new List<int>();
+            foreach (int mustWinNumber in mustWinList)
             {
-                Debug.LogError("抽奖尝试次数过多，可能存在逻辑错误或配置问题。已停止抽奖。");
-                return;
+                if (mustWinNumber >= configData.commonMinPeopleIndex && 
+                    mustWinNumber <= configData.commonMaxPeopleIndex &&
+                    !commonWinnerIndices.Contains(mustWinNumber) &&
+                    !blackList.Contains(mustWinNumber))
+                {
+                    validMustWinList.Add(mustWinNumber);
+                }
             }
             
-        } while (commonWinnerIndices.Contains(drawnIndex) || blackList.Contains(drawnIndex)); // 检查普通奖中奖记录和黑名单
+            // 如果有符合条件的必中人员，从中随机抽取一个
+            if (validMustWinList.Count > 0)
+            {
+                int randomIndex = Random.Range(0, validMustWinList.Count);
+                drawnIndex = validMustWinList[randomIndex];
+                drawnFromMustWinList = true;
+                Debug.Log($"从必中榜单中抽取，可选人数：{validMustWinList.Count}");
+            }
+            else
+            {
+                Debug.Log("必中榜单中没有符合条件的人员，将进行正常抽奖。");
+            }
+        }
+        
+        // 如果必中榜单没有符合条件的人员，则进行正常抽奖
+        if (drawnIndex == -1)
+        {
+            int attemptCount = 0; 
+            const int maxAttempts = 10000;
+
+            do
+            {
+                // 在普通奖范围内随机抽取
+                drawnIndex = Random.Range(configData.commonMinPeopleIndex, configData.commonMaxPeopleIndex + 1);
+                attemptCount++;
+
+                if (attemptCount > maxAttempts)
+                {
+                    Debug.LogError("抽奖尝试次数过多，可能存在逻辑错误或配置问题。已停止抽奖。");
+                    return;
+                }
+                
+            } while (commonWinnerIndices.Contains(drawnIndex) || blackList.Contains(drawnIndex)); // 检查普通奖中奖记录和黑名单
+        }
 
         LastWinnerID = drawnIndex;
         // 将中奖人添加到普通奖中奖集合
@@ -358,7 +442,8 @@ public partial class GameLogicHandler
             });
         }
         
-        string logString = $"抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{LastWinnerID}。 " +
+        string drawSource = drawnFromMustWinList ? "【必中榜单】" : "【正常抽奖】";
+        string logString = $"{drawSource}抽奖键按下，当前奖项为第 {CurrentPrizeIndex} 等奖，中奖号码为：{LastWinnerID}。 " +
                      $"普通奖已中奖人数：{commonWinnerIndices.Count}";
         Debug.Log(logString);
         
@@ -366,4 +451,5 @@ public partial class GameLogicHandler
         SaveDrawResult();
     }
 }
+
 
