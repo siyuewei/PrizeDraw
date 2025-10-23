@@ -105,9 +105,9 @@ public partial class UIManager
         }
         
         // 清空中奖结果文本
-        if (prizeResultText != null)
+        if (prizeResultTextMeshPro != null)
         {
-            prizeResultText.text = "";
+            prizeResultTextMeshPro.text = "";
         }
         
         // 重置背景图片

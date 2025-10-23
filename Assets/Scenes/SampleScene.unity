@@ -354,7 +354,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: eba5e85a70b0d9f42be264be80fd49de, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1aad25719e3ecae4bbcf6bb504e1e9e8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1880,6 +1880,11 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 40, z: 0}
   - {x: 0, y: 0, z: 0}
+  prizeResultTextColors:
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 0, g: 0, b: 0, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
   prizeResultColors:
   - {r: 1, g: 1, b: 1, a: 0.11764706}
   - {r: 0.9647059, g: 1, b: 0.49803922, a: 0.11764706}
@@ -1892,8 +1897,7 @@ MonoBehaviour:
   playerRunBackgroundObject: {fileID: 1606933640}
   videoPlayerForPlayerRunBackground: {fileID: 1606933642}
   prizeResultPanel: {fileID: 1142713407}
-  prizeResultText: {fileID: 1963387370}
-  prizeNumberObject: {fileID: 0}
+  prizeResultTextMeshPro: {fileID: 1963387370}
   prizeResultImage: {fileID: 386790772}
   prizeResultBackgroundImage: {fileID: 1528994909}
   curtainPanel: {fileID: 437823457}
@@ -1966,8 +1970,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

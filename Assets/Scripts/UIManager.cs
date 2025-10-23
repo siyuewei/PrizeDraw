@@ -3,6 +3,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Video;
 using TMPro;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 /// <summary>
@@ -20,6 +21,9 @@ public partial class UIManager : MonoBehaviour
     [Header("中奖结果文字位置")]
     public List<Vector3> prizeResultRects; // 对应不同奖项的文字位置调整
     
+    [Header("中奖结果文字颜色")]
+    public List<Color> prizeResultTextColors;
+    
     [Header("中奖结果背景图Color")]
     public List<Color> prizeResultColors;
     
@@ -35,8 +39,7 @@ public partial class UIManager : MonoBehaviour
     
     [Header("中奖结果显示配置")]
     public GameObject prizeResultPanel; // 显示中奖结果的面板
-    public TextMeshProUGUI prizeResultText; // 显示中奖结果的ID
-    public GameObject prizeNumberObject; // 中奖结果数字对象
+    [FormerlySerializedAs("prizeResultText")] public TextMeshProUGUI prizeResultTextMeshPro; // 显示中奖结果的ID
     public Image prizeResultImage;
     public Image prizeResultBackgroundImage;
     
@@ -258,9 +261,9 @@ public partial class UIManager : MonoBehaviour
         }
         
         // 更新中奖ID
-        if (prizeResultText != null)
+        if (prizeResultTextMeshPro != null)
         {
-            prizeResultText.text = GameLogicHandler.Instance?.LastWinnerID.ToString() ?? "未知";
+            prizeResultTextMeshPro.text = GameLogicHandler.Instance?.LastWinnerID.ToString() ?? "未知";
         }
         
         // 更新背景图片
@@ -277,9 +280,15 @@ public partial class UIManager : MonoBehaviour
         }
         
         // 调整文字位置
-        if (prizeResultText != null && prizeIndex > 0 && prizeIndex <= prizeResultRects.Count)
+        if (prizeResultTextMeshPro != null && prizeIndex > 0 && prizeIndex <= prizeResultRects.Count)
         {
-            prizeResultText.rectTransform.localPosition = prizeResultRects[prizeIndex - 1];
+            prizeResultTextMeshPro.rectTransform.localPosition = prizeResultRects[prizeIndex - 1];
+        }
+        
+        // 更新文字颜色
+        if (prizeResultTextMeshPro != null && prizeIndex > 0 && prizeIndex <= prizeResultTextColors.Count)
+        {
+            prizeResultTextMeshPro.color = prizeResultTextColors[prizeIndex - 1];
         }
     }
     
