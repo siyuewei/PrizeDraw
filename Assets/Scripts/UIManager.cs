@@ -17,6 +17,9 @@ public partial class UIManager : MonoBehaviour
     [Header("中奖结果背景图片")]
     public List<Sprite> prizeResultBackgrounds; // 对应不同奖项的背景图片
     
+    [Header("中奖结果文字位置")]
+    public List<Vector3> prizeResultRects; // 对应不同奖项的文字位置调整
+    
     [Header("中奖结果背景图Color")]
     public List<Color> prizeResultColors;
     
@@ -33,6 +36,7 @@ public partial class UIManager : MonoBehaviour
     [Header("中奖结果显示配置")]
     public GameObject prizeResultPanel; // 显示中奖结果的面板
     public TextMeshProUGUI prizeResultText; // 显示中奖结果的ID
+    public GameObject prizeNumberObject; // 中奖结果数字对象
     public Image prizeResultImage;
     public Image prizeResultBackgroundImage;
     
@@ -270,6 +274,12 @@ public partial class UIManager : MonoBehaviour
         if (prizeResultBackgroundImage != null && prizeIndex > 0 && prizeIndex <= prizeResultColors.Count)
         {
             prizeResultBackgroundImage.color = prizeResultColors[prizeIndex - 1];
+        }
+        
+        // 调整文字位置
+        if (prizeResultText != null && prizeIndex > 0 && prizeIndex <= prizeResultRects.Count)
+        {
+            prizeResultText.rectTransform.localPosition = prizeResultRects[prizeIndex - 1];
         }
     }
     
