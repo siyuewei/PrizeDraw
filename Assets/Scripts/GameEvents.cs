@@ -31,7 +31,10 @@ public static class GameEvents
     // UI完成事件（由UIManager发送，GameLogicHandler处理）
     public static event Action OnReadyToShowResult; // 抽奖动画播放到设定百分比，准备显示结果
     public static event Action OnTransitionComplete;
-    
+
+    public static event Action<int> OnChangeMustListIndex;
+    public static event Action<int> OnMustListIndexChanged;
+
     // 状态变化通知
     public static void NotifyStateChanged(GameState newState)
     {
@@ -74,5 +77,15 @@ public static class GameEvents
     public static void NotifyTransitionComplete()
     {
         OnTransitionComplete?.Invoke();
+    }
+
+    public static void ChangeMustListIndex(int mustListIndex)
+    {
+        OnChangeMustListIndex?.Invoke(mustListIndex);
+    }
+
+    public static void NotifyMustListIndexChanged(int mustListIndex)
+    {
+        OnMustListIndexChanged?.Invoke(mustListIndex);
     }
 }

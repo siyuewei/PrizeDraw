@@ -25,7 +25,7 @@ public partial class GameLogicHandler
             Debug.LogError("配置错误：最小编号大于最大编号。请检查 config.json。");
             return 0;
         }
-        
+
         // 计算总人数
         int totalPeople = configData.commonMaxPeopleIndex - configData.commonMinPeopleIndex + 1;
 
@@ -38,32 +38,32 @@ public partial class GameLogicHandler
                 availableCount++;
             }
         }
-        
+
         if (availableCount <= 0)
         {
             Debug.LogWarning("注意：可参与抽奖的人数（非黑名单且在范围内）为 0！无法进行抽奖。");
         }
-        
+
         return availableCount;
     }
 
     void ReadBlackListFile()
     {
         blackList.Clear(); // 清空，确保每次读取都是最新的
-        
+
         try
         {
             if (File.Exists(blackListFilePath))
             {
                 // 使用 File.ReadAllLines 读取所有行
                 string[] lines = File.ReadAllLines(blackListFilePath);
-                
+
                 foreach (string line in lines)
                 {
                     // 忽略空行或只包含空格的行
                     string trimmedLine = line.Trim();
                     if (string.IsNullOrEmpty(trimmedLine)) continue;
-                    
+
                     if (int.TryParse(trimmedLine, out int blackListNumber))
                     {
                         // 仅添加在合法范围内的黑名单编号
@@ -94,27 +94,33 @@ public partial class GameLogicHandler
             Debug.LogError($"读取黑名单文件失败：{e.Message}");
         }
     }
-    
+
     /// <summary>
     /// 读取必中榜单文件
     /// </summary>
     List<int> ReadMustWinListFile()
     {
         List<int> mustWinList = new List<int>();
-        
+
+        if (mustListIndex == 0) return mustWinList;
+
+        string mustFileName = "mustwinlist" + mustListIndex + ".txt";
+        mustWinListFilePath = Path.Combine(Application.dataPath, mustFileName);
+        Debug.Log(mustFileName);
+
         try
         {
             if (File.Exists(mustWinListFilePath))
             {
                 // 使用 File.ReadAllLines 读取所有行
                 string[] lines = File.ReadAllLines(mustWinListFilePath);
-                
+
                 foreach (string line in lines)
                 {
                     // 忽略空行或只包含空格的行
                     string trimmedLine = line.Trim();
                     if (string.IsNullOrEmpty(trimmedLine)) continue;
-                    
+
                     if (int.TryParse(trimmedLine, out int mustWinNumber))
                     {
                         mustWinList.Add(mustWinNumber);
@@ -124,22 +130,24 @@ public partial class GameLogicHandler
                         Debug.LogWarning($"必中榜单文件包含非数字行：'{line}'，已跳过。");
                     }
                 }
-                
+
                 Debug.Log($"必中榜单读取成功，共 {mustWinList.Count} 人。");
             }
             else
             {
                 Debug.Log($"必中榜单文件不存在：{mustWinListFilePath}，将进行正常抽奖。");
+                // create a empty file
+                File.WriteAllText(mustWinListFilePath, "");
             }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"读取必中榜单文件失败：{e.Message}");
         }
-        
+
         return mustWinList;
     }
-    
+
     void ReadConfigFile()
     {
         try
@@ -148,7 +156,7 @@ public partial class GameLogicHandler
             {
                 string jsonString = File.ReadAllText(configFilePath);
                 ConfigData loadedConfig = JsonUtility.FromJson<ConfigData>(jsonString);
-                
+
                 if (loadedConfig != null)
                 {
                     configData = loadedConfig;
@@ -172,7 +180,7 @@ public partial class GameLogicHandler
             Debug.LogError($"读取配置文件失败：{e.Message}。使用默认值。");
         }
     }
-    
+
     /// <summary>
     /// 保存抽奖结果到文件
     /// </summary>
@@ -181,7 +189,7 @@ public partial class GameLogicHandler
         string json = JsonUtility.ToJson(drawResultData, true);
         File.WriteAllText(drawResultFilePath, json);
     }
-    
+
     /// <summary>
     /// 从文件加载抽奖结果
     /// </summary>
@@ -196,7 +204,7 @@ public partial class GameLogicHandler
                 if (loadedData != null && loadedData.prizeWinners != null)
                 {
                     drawResultData = loadedData;
-                    
+
                     // 重建drawnPeopleIndices集合
                     commonWinnerIndices.Clear();
                     specialWinnerIndices.Clear();
@@ -217,7 +225,7 @@ public partial class GameLogicHandler
                             }
                         }
                     }
-                    
+
                     Debug.Log($"抽奖结果加载成功。普通奖已中奖人数: {commonWinnerIndices.Count}，特别奖已中奖人数: {specialWinnerIndices.Count}");
                 }
                 else
@@ -232,10 +240,10 @@ public partial class GameLogicHandler
         }
         else
         {
-           Debug.Log("未找到抽奖结果文件，将从初始状态开始。");
+            Debug.Log("未找到抽奖结果文件，将从初始状态开始。");
         }
     }
-    
+
     /// <summary>
     /// 清除抽奖历史记录
     /// </summary>
@@ -247,12 +255,12 @@ public partial class GameLogicHandler
             Debug.LogWarning($"当前状态为 {CurrentState}，无法清除抽奖历史");
             return;
         }
-        
+
         // 清除已中奖人员列表和中奖记录
         commonWinnerIndices.Clear();
         specialWinnerIndices.Clear();
         drawResultData.prizeWinners.Clear();
-        
+
         // 删除抽奖结果文件
         try
         {
@@ -262,19 +270,19 @@ public partial class GameLogicHandler
             }
 
             Debug.Log("抽奖历史已清除");
-            
+
         }
         catch (System.Exception e)
         {
             Debug.LogError($"清除抽奖历史失败：{e.Message}");
         }
     }
-    
+
     void PrizeDraw()
     {
         // 判断当前是否是特别奖
         bool isSpecialPrize = (CurrentPrizeIndex == configData.specialPrizeIndex);
-        
+
         if (isSpecialPrize)
         {
             // 特别奖抽奖逻辑
@@ -286,7 +294,7 @@ public partial class GameLogicHandler
             DrawCommonPrize();
         }
     }
-    
+
     /// <summary>
     /// 特别奖抽奖逻辑
     /// </summary>
@@ -295,30 +303,29 @@ public partial class GameLogicHandler
         // 计算特别奖可用人数
         int specialTotalPeople = configData.specialMaxPeopleIndex - configData.specialMinPeopleIndex + 1;
         int specialAvailableCount = specialTotalPeople - specialWinnerIndices.Count;
-        
+
         if (specialAvailableCount <= 0)
         {
             Debug.LogWarning("所有特别奖人员都已被抽中，无法继续抽奖。");
             return;
         }
-        
+
         int drawnIndex;
         int attemptCount = 0;
-        const int maxAttempts = 10000;
-        
+        const int maxAttempts = 1000;
+
         do
         {
-            // 在特别奖范围内随机抽取
-            drawnIndex = Random.Range(configData.specialMinPeopleIndex, configData.specialMaxPeopleIndex + 1);
             attemptCount++;
-            
             if (attemptCount > maxAttempts)
             {
                 Debug.LogError("特别奖抽奖尝试次数过多，可能存在逻辑错误或配置问题。已停止抽奖。");
                 return;
             }
-            
-        } while (specialWinnerIndices.Contains(drawnIndex)); // 只检查特别奖的中奖记录，不考虑黑名单
+
+            // 在特别奖范围内随机抽取
+            drawnIndex = Random.Range(configData.specialMinPeopleIndex, configData.specialMaxPeopleIndex + 1);
+        } while (specialWinnerIndices.Contains(drawnIndex) || drawnIndex.ToString().Contains("4")); // 只检查特别奖的中奖记录，不考虑黑名单
         
         LastWinnerID = drawnIndex;
         // 将中奖人添加到特别奖中奖集合

@@ -57,6 +57,8 @@ public partial class GameLogicHandler : MonoBehaviour
     // 将黑名单改为 HashSet，提高查找效率
     private readonly HashSet<int> blackList = new HashSet<int>();
 
+    private int mustListIndex = 0;
+
     // 文件路径
     private string blackListFilePath;
     private string configFilePath;
@@ -112,6 +114,10 @@ public partial class GameLogicHandler : MonoBehaviour
         
         // 初始化到待机状态
         ChangeState(GameState.Idle);
+
+        //设置随机数种子
+        Random.InitState(System.DateTime.Now.Millisecond);
+
     }
     
     void OnDestroy()
@@ -131,6 +137,7 @@ public partial class GameLogicHandler : MonoBehaviour
         GameEvents.OnRestartRequested += HandleRestartRequested;
         GameEvents.OnReadyToShowResult += HandleReadyToShowResult;
         GameEvents.OnTransitionComplete += HandleTransitionComplete;
+        GameEvents.OnChangeMustListIndex += HandleChangeMustListIndex;
     }
     
     /// <summary>
@@ -144,6 +151,7 @@ public partial class GameLogicHandler : MonoBehaviour
         GameEvents.OnRestartRequested -= HandleRestartRequested;
         GameEvents.OnReadyToShowResult -= HandleReadyToShowResult;
         GameEvents.OnTransitionComplete -= HandleTransitionComplete;
+        GameEvents.OnChangeMustListIndex -= HandleChangeMustListIndex;
     }
     
     /// <summary>
@@ -270,5 +278,12 @@ public partial class GameLogicHandler : MonoBehaviour
         
         // 通知所有监听者状态已改变
         GameEvents.NotifyStateChanged(newState);
+    }
+
+    private void HandleChangeMustListIndex(int mustListIndex)
+    {
+        this.mustListIndex = mustListIndex;
+        Debug.Log($"必须中奖名单索引已切换到: {this.mustListIndex}");
+        GameEvents.NotifyMustListIndexChanged(mustListIndex);
     }
 }

@@ -1,10 +1,11 @@
-using System.Collections.Generic;
 using Sirenix.OdinInspector;
-using UnityEngine;
-using UnityEngine.Video;
+using System.Collections;
+using System.Collections.Generic;
 using TMPro;
+using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 /// <summary>
 /// UI管理器 - 负责监听游戏状态变化并更新UI显示
@@ -17,7 +18,13 @@ public partial class UIManager : MonoBehaviour
     
     [Header("中奖结果背景图片")]
     public List<Sprite> prizeResultBackgrounds; // 对应不同奖项的背景图片
-    
+
+    [Header("螃蟹背景图片")]
+    public List<Sprite> crabBackgrounds; // 对应不同奖项的螃蟹背景图片
+
+    [Header("星星棒")]
+    public List<Sprite> starBackgrounds;
+
     [Header("中奖结果文字位置")]
     public List<Vector3> prizeResultRects; // 对应不同奖项的文字位置调整
     
@@ -39,7 +46,8 @@ public partial class UIManager : MonoBehaviour
     
     [Header("中奖结果显示配置")]
     public GameObject prizeResultPanel; // 显示中奖结果的面板
-    [FormerlySerializedAs("prizeResultText")] public TextMeshProUGUI prizeResultTextMeshPro; // 显示中奖结果的ID
+    [FormerlySerializedAs("prizeResultText")] 
+    public TextMeshProUGUI prizeResultTextMeshPro; // 显示中奖结果的ID
     public Image prizeResultImage;
     public Image prizeResultBackgroundImage;
     
@@ -48,13 +56,18 @@ public partial class UIManager : MonoBehaviour
     public VideoPlayer curtainVideoPlayer;
     public VideoClip curtainCloseClip; // 黑屏关闭动画
     public VideoClip curtainOpenClip; // 开屏打开动画
+
+    [Header("必中榜单序号")]
+    public TextMeshProUGUI mustListIndexTextMeshPro;
     #endregion
     
     #region 私有变量
     private bool isPlayingCloseCurtain = false; // 标记当前是否正在播放关闭动画
     private bool hasNotifiedDrawingComplete = false; // 标记是否已通知抽奖完成（防止重复通知）
+    private Coroutine crabSwitcher = null; // 切换图片协程引用
+    private Coroutine starSwitcher = null;
     #endregion
-    
+
     #region Unity生命周期
     void Start()
     {
@@ -92,6 +105,8 @@ public partial class UIManager : MonoBehaviour
         {
             curtainVideoPlayer.loopPointReached += OnCurtainVideoFinished;
         }
+
+        GameEvents.OnMustListIndexChanged += HandleMustListIndexChanged;
     }
     
     /// <summary>
@@ -115,6 +130,8 @@ public partial class UIManager : MonoBehaviour
         {
             curtainVideoPlayer.loopPointReached -= OnCurtainVideoFinished;
         }
+
+        GameEvents.OnMustListIndexChanged -= HandleMustListIndexChanged;
     }
     #endregion
     
@@ -270,9 +287,18 @@ public partial class UIManager : MonoBehaviour
         int prizeIndex = GameLogicHandler.Instance?.CurrentPrizeIndex ?? 1;
         if (prizeResultImage != null && prizeIndex > 0 && prizeIndex <= prizeResultBackgrounds.Count)
         {
-            prizeResultImage.sprite = prizeResultBackgrounds[prizeIndex - 1];
+            if (prizeIndex == 3)
+            {
+                crabSwitcher = StartCoroutine(SwitchImages());
+            }
+            else if(prizeIndex == 2)
+            {
+                starSwitcher = StartCoroutine(StarSwitchImages());
+            }
+            else
+                prizeResultImage.sprite = prizeResultBackgrounds[prizeIndex - 1];
         }
-        
+
         // 更新背景颜色
         if (prizeResultBackgroundImage != null && prizeIndex > 0 && prizeIndex <= prizeResultColors.Count)
         {
@@ -298,7 +324,19 @@ public partial class UIManager : MonoBehaviour
     private void ShowTransitionUI()
     {
         Debug.Log("[UI] 显示过渡状态");
-        
+
+        if (crabSwitcher != null)
+        {
+            StopCoroutine(crabSwitcher);
+            crabSwitcher = null;
+        }
+
+        if (starSwitcher != null)
+        {
+            StopCoroutine(starSwitcher);
+            starSwitcher = null;
+        }
+
         // 显示过渡幕布
         if (curtainPanel != null)
         {
@@ -314,6 +352,36 @@ public partial class UIManager : MonoBehaviour
             curtainVideoPlayer.Play();
             isPlayingCloseCurtain = true;
         }
+    }
+
+    private IEnumerator SwitchImages()
+    {
+        int index = 0;
+        while (true)
+        {
+            Debug.Log("[UI] 切换螃蟹图片"+index);
+            prizeResultImage.sprite = crabBackgrounds[index];
+            index = (index + 1) % crabBackgrounds.Count;
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    private IEnumerator StarSwitchImages()
+    {
+        int index = 0;
+        while (true)
+        {
+            Debug.Log("[UI] 切换星星图片" + index);
+            prizeResultImage.sprite = starBackgrounds[index];
+            index = (index + 1) % starBackgrounds.Count;
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+
+
+    private void HandleMustListIndexChanged(int mustListIndex)
+    {
+        mustListIndexTextMeshPro.text = mustListIndex.ToString();
     }
     #endregion
 }

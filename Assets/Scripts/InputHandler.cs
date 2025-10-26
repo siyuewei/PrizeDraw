@@ -6,13 +6,18 @@ using UnityEngine;
 public class InputHandler : MonoBehaviour
 {
     // 按键映射
-    private readonly KeyCode _keyCode_Prize1 = KeyCode.Alpha1; // 一等奖
+    private readonly KeyCode _keyCode_Prize1 = KeyCode.Alpha5; // 一等奖
     private readonly KeyCode _keyCode_Prize2 = KeyCode.Alpha2; // 二等奖
     private readonly KeyCode _keyCode_Prize3 = KeyCode.Alpha3; // 三等奖
     private readonly KeyCode _keyCode_Prize4 = KeyCode.Alpha4; // 四等奖
-    private readonly KeyCode _keyCode_PrizeDraw = KeyCode.Return; // 抽奖键
+    private readonly KeyCode _keyCode_PrizeDraw = KeyCode.Alpha1; // 抽奖键
     private readonly KeyCode _keyCode_reload = KeyCode.C; // 重新加载配置和黑名单
     private readonly KeyCode _keyCode_restart = KeyCode.R; //重新开启一次抽奖
+
+    private readonly KeyCode _keyCode_must_0 = KeyCode.A;
+    private readonly KeyCode _keyCode_must_1 = KeyCode.S;
+    private readonly KeyCode _keyCode_must_2 = KeyCode.D;
+    private readonly KeyCode _keyCode_must_3 = KeyCode.F;
 
     void Update()
     {
@@ -20,6 +25,7 @@ public class InputHandler : MonoBehaviour
         HandlePrizeDraw();
         HandleReload();
         HandleRestart();
+        HandleMustListIndexChange();
     }
     
     /// <summary>
@@ -81,6 +87,27 @@ public class InputHandler : MonoBehaviour
         if (Input.GetKeyDown(_keyCode_restart))
         {
             GameEvents.RequestRestart();
+        }
+    }
+
+    private void HandleMustListIndexChange()
+    {
+        if (Input.GetKeyDown(_keyCode_must_0))
+        {
+            GameEvents.ChangeMustListIndex(0);
+        }
+
+        else if (Input.GetKeyDown(_keyCode_must_1))
+        {
+            GameEvents.ChangeMustListIndex(1);
+        }
+        else if (Input.GetKeyDown(_keyCode_must_2))
+        {
+            GameEvents.ChangeMustListIndex(2);
+        }
+        else if (Input.GetKeyDown(_keyCode_must_3))
+        {
+            GameEvents.ChangeMustListIndex(3);
         }
     }
 }
