@@ -13,11 +13,11 @@ using UnityEngine;
 public class MInputSystem : MonoBehaviour, ISystem
 {
     #region 按键映射
-    private readonly KeyCode keyCode_Prize1 = KeyCode.Alpha5; // 一等奖
+    private readonly KeyCode keyCode_Prize1 = KeyCode.Alpha1; // 一等奖
     private readonly KeyCode keyCode_Prize2 = KeyCode.Alpha2; // 二等奖
     private readonly KeyCode keyCode_Prize3 = KeyCode.Alpha3; // 三等奖
     private readonly KeyCode keyCode_Prize4 = KeyCode.Alpha4; // 四等奖
-    private readonly KeyCode keyCode_PrizeDraw = KeyCode.Alpha1; // 抽奖键
+    private readonly KeyCode keyCode_PrizeDraw = KeyCode.Return; // 抽奖键
     private readonly KeyCode keyCode_Reload = KeyCode.C; // 重新加载配置
     private readonly KeyCode keyCode_Restart = KeyCode.R; // 重启
     private readonly KeyCode keyCode_Must_0 = KeyCode.A;
