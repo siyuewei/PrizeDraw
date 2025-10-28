@@ -50,7 +50,7 @@ public class MConfigSystem : MonoBehaviour, ISystem
     #region 系统接口实现
     public void Initialize()
     {
-        Debug.Log("[ConfigSystem] 初始化配置系统...");
+        Debug.Log("[MConfigSystem] 初始化配置系统...");
         
         // 设置文件路径
         blackListFilePath = Path.Combine(Application.dataPath, "blacklist.txt");
@@ -60,20 +60,17 @@ public class MConfigSystem : MonoBehaviour, ISystem
         // 读取所有配置文件
         LoadAllData();
         
-        Debug.Log($"[ConfigSystem] 配置加载完成。人员范围: {Config.commonMinPeopleIndex}-{Config.commonMaxPeopleIndex}, " +
+        Debug.Log($"[MConfigSystem] 配置加载完成。人员范围: {Config.commonMinPeopleIndex}-{Config.commonMaxPeopleIndex}, " +
                   $"黑名单: {BlackList.Count}人, 已中奖: {CommonWinnerIndices.Count}人");
     }
     
     public void Cleanup()
     {
-        Debug.Log("[ConfigSystem] 清理配置系统");
+        Debug.Log("[MConfigSystem] 清理配置系统");
     }
     #endregion
     
     #region 数据加载
-    /// <summary>
-    /// 加载所有数据
-    /// </summary>
     public void LoadAllData()
     {
         ReadConfigFile();
@@ -81,9 +78,6 @@ public class MConfigSystem : MonoBehaviour, ISystem
         LoadDrawResult();
     }
     
-    /// <summary>
-    /// 读取配置文件
-    /// </summary>
     private void ReadConfigFile()
     {
         try
@@ -96,30 +90,26 @@ public class MConfigSystem : MonoBehaviour, ISystem
                 if (loadedConfig != null)
                 {
                     Config = loadedConfig;
-                    Debug.Log($"[ConfigSystem] 配置文件读取成功，人员编号范围：{Config.commonMinPeopleIndex} - {Config.commonMaxPeopleIndex}");
+                    Debug.Log($"[MConfigSystem] 配置文件读取成功");
                 }
                 else
                 {
-                    Debug.LogError("[ConfigSystem] 配置文件解析失败，将使用默认值。");
+                    Debug.LogError("[MConfigSystem] 配置文件解析失败，使用默认值");
                 }
             }
             else
             {
-                // 创建默认配置文件
                 string defaultJson = JsonUtility.ToJson(Config, true);
                 File.WriteAllText(configFilePath, defaultJson);
-                Debug.Log($"[ConfigSystem] 配置文件不存在，已创建默认文件：{configFilePath}");
+                Debug.Log($"[MConfigSystem] 创建默认配置文件：{configFilePath}");
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ConfigSystem] 读取配置文件失败：{e.Message}。使用默认值。");
+            Debug.LogError($"[MConfigSystem] 读取配置文件失败：{e.Message}");
         }
     }
     
-    /// <summary>
-    /// 读取黑名单文件
-    /// </summary>
     private void ReadBlackListFile()
     {
         BlackList.Clear();
@@ -142,32 +132,21 @@ public class MConfigSystem : MonoBehaviour, ISystem
                         {
                             BlackList.Add(blackListNumber);
                         }
-                        else
-                        {
-                            Debug.LogWarning($"[ConfigSystem] 黑名单编号 {blackListNumber} 超出范围，已忽略。");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[ConfigSystem] 黑名单包含非数字行：'{line}'，已跳过。");
                     }
                 }
             }
             else
             {
                 File.WriteAllText(blackListFilePath, "");
-                Debug.Log($"[ConfigSystem] 黑名单文件不存在，已创建：{blackListFilePath}");
+                Debug.Log($"[MConfigSystem] 创建黑名单文件：{blackListFilePath}");
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ConfigSystem] 读取黑名单文件失败：{e.Message}");
+            Debug.LogError($"[MConfigSystem] 读取黑名单失败：{e.Message}");
         }
     }
     
-    /// <summary>
-    /// 加载抽奖结果
-    /// </summary>
     private void LoadDrawResult()
     {
         if (File.Exists(drawResultFilePath))
@@ -181,7 +160,6 @@ public class MConfigSystem : MonoBehaviour, ISystem
                 {
                     DrawResult = loadedData;
 
-                    // 重建中奖人员集合
                     CommonWinnerIndices.Clear();
                     SpecialWinnerIndices.Clear();
                     
@@ -203,51 +181,35 @@ public class MConfigSystem : MonoBehaviour, ISystem
                         }
                     }
 
-                    Debug.Log($"[ConfigSystem] 抽奖结果加载成功。普通奖: {CommonWinnerIndices.Count}人，特别奖: {SpecialWinnerIndices.Count}人");
-                }
-                else
-                {
-                    Debug.LogWarning("[ConfigSystem] 抽奖结果文件为空或格式错误。");
+                    Debug.Log($"[MConfigSystem] 抽奖结果加载成功。普通奖: {CommonWinnerIndices.Count}人，特别奖: {SpecialWinnerIndices.Count}人");
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[ConfigSystem] 加载抽奖结果失败：{e.Message}");
+                Debug.LogError($"[MConfigSystem] 加载抽奖结果失败：{e.Message}");
             }
-        }
-        else
-        {
-            Debug.Log("[ConfigSystem] 未找到抽奖结果文件，将从初始状态开始。");
         }
     }
     #endregion
     
     #region 数据保存
-    /// <summary>
-    /// 保存抽奖结果到文件
-    /// </summary>
     public void SaveDrawResult()
     {
         try
         {
             string json = JsonUtility.ToJson(DrawResult, true);
             File.WriteAllText(drawResultFilePath, json);
-            Debug.Log("[ConfigSystem] 抽奖结果已保存");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ConfigSystem] 保存抽奖结果失败：{e.Message}");
+            Debug.LogError($"[MConfigSystem] 保存抽奖结果失败：{e.Message}");
         }
     }
     #endregion
     
     #region 数据操作
-    /// <summary>
-    /// 添加中奖者
-    /// </summary>
     public void AddWinner(int prizeIndex, int winnerId)
     {
-        // 添加到对应的中奖集合
         if (prizeIndex == Config.specialPrizeIndex)
         {
             SpecialWinnerIndices.Add(winnerId);
@@ -257,8 +219,7 @@ public class MConfigSystem : MonoBehaviour, ISystem
             CommonWinnerIndices.Add(winnerId);
         }
         
-        // 添加到抽奖结果数据
-        PrizeWinnerEntry existingEntry = DrawResult.prizeWinners.Find(entry => entry.prizeIndex == prizeIndex);
+        var existingEntry = DrawResult.prizeWinners.Find(entry => entry.prizeIndex == prizeIndex);
         if (existingEntry != null)
         {
             existingEntry.winnerIds.Add(winnerId);
@@ -272,13 +233,9 @@ public class MConfigSystem : MonoBehaviour, ISystem
             });
         }
         
-        // 自动保存
         SaveDrawResult();
     }
     
-    /// <summary>
-    /// 清除抽奖历史
-    /// </summary>
     public void ClearDrawHistory()
     {
         CommonWinnerIndices.Clear();
@@ -291,17 +248,14 @@ public class MConfigSystem : MonoBehaviour, ISystem
             {
                 File.Delete(drawResultFilePath);
             }
-            Debug.Log("[ConfigSystem] 抽奖历史已清除");
+            Debug.Log("[MConfigSystem] 抽奖历史已清除");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ConfigSystem] 清除抽奖历史失败：{e.Message}");
+            Debug.LogError($"[MConfigSystem] 清除抽奖历史失败：{e.Message}");
         }
     }
     
-    /// <summary>
-    /// 读取必中榜单文件
-    /// </summary>
     public List<int> ReadMustWinList(int mustListIndex)
     {
         List<int> mustWinList = new List<int>();
@@ -326,36 +280,28 @@ public class MConfigSystem : MonoBehaviour, ISystem
                     {
                         mustWinList.Add(mustWinNumber);
                     }
-                    else
-                    {
-                        Debug.LogWarning($"[ConfigSystem] 必中榜单包含非数字行：'{line}'，已跳过。");
-                    }
                 }
 
-                Debug.Log($"[ConfigSystem] 必中榜单读取成功，共 {mustWinList.Count} 人。");
+                Debug.Log($"[MConfigSystem] 必中榜单读取成功，共 {mustWinList.Count} 人");
             }
             else
             {
-                Debug.Log($"[ConfigSystem] 必中榜单文件不存在：{mustWinListFilePath}");
                 File.WriteAllText(mustWinListFilePath, "");
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ConfigSystem] 读取必中榜单失败：{e.Message}");
+            Debug.LogError($"[MConfigSystem] 读取必中榜单失败：{e.Message}");
         }
 
         return mustWinList;
     }
     
-    /// <summary>
-    /// 计算可用人数
-    /// </summary>
     public int GetCommonAvailablePeopleCount()
     {
         if (Config.commonMinPeopleIndex > Config.commonMaxPeopleIndex)
         {
-            Debug.LogError("[ConfigSystem] 配置错误：最小编号大于最大编号。");
+            Debug.LogError("[MConfigSystem] 配置错误：最小编号大于最大编号");
             return 0;
         }
 
@@ -372,4 +318,3 @@ public class MConfigSystem : MonoBehaviour, ISystem
     }
     #endregion
 }
-

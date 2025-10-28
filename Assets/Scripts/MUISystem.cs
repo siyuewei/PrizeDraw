@@ -9,6 +9,15 @@ using UnityEngine.Video;
 
 /// <summary>
 /// UI系统 - 负责监听游戏状态变化并更新UI显示
+/// 
+/// 订阅的事件：
+/// - EventId.GameStateChanged - 游戏状态改变
+/// - EventId.PrizeIndexUpdated - 奖项已更新
+/// - EventId.MustListIndexChanged - 必中榜单索引改变
+/// 
+/// 发布的事件：
+/// - EventId.ReadyToShowResult - 抽奖动画完成，准备显示结果
+/// - EventId.TransitionComplete - 过渡动画完成
 /// </summary>
 public class MUISystem : MonoBehaviour, ISystem
 {
@@ -68,25 +77,23 @@ public class MUISystem : MonoBehaviour, ISystem
     private Coroutine starSwitcher = null;
     
     private MEventSystem eventSystem;
-    private MGameLogicSystem _mGameLogicSystem;
+    private MGameLogicSystem gameLogicSystem;
     #endregion
 
     #region 系统接口实现
     public void Initialize()
     {
-        Debug.Log("[UISystem] 初始化UI系统");
+        Debug.Log("[MUISystem] 初始化UI系统");
         
-        // 获取系统引用
         eventSystem = SystemManager.Instance.Events;
-        _mGameLogicSystem = SystemManager.Instance.MGameLogic;
+        gameLogicSystem = SystemManager.Instance.MGameLogic;
         
-        // 订阅事件
         SubscribeToEvents();
     }
     
     public void Cleanup()
     {
-        Debug.Log("[UISystem] 清理UI系统");
+        Debug.Log("[MUISystem] 清理UI系统");
         UnsubscribeFromEvents();
     }
     #endregion
@@ -94,9 +101,10 @@ public class MUISystem : MonoBehaviour, ISystem
     #region 事件订阅管理
     private void SubscribeToEvents()
     {
-        eventSystem.OnGameStateChanged += HandleGameStateChanged;
-        eventSystem.OnPrizeIndexUpdated += HandlePrizeIndexUpdated;
-        eventSystem.OnMustListIndexChanged += HandleMustListIndexChanged;
+        // 搜索 "EventId.GameStateChanged" 可以找到所有发布此事件的位置
+        eventSystem.Subscribe<GameStateEventArg>(EventId.GameStateChanged, HandleGameStateChanged);
+        eventSystem.Subscribe<IntEventArg>(EventId.PrizeIndexUpdated, HandlePrizeIndexUpdated);
+        eventSystem.Subscribe<IntEventArg>(EventId.MustListIndexChanged, HandleMustListIndexChanged);
         
         if (videoPlayerForPlayer != null)
         {
@@ -111,9 +119,9 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void UnsubscribeFromEvents()
     {
-        eventSystem.OnGameStateChanged -= HandleGameStateChanged;
-        eventSystem.OnPrizeIndexUpdated -= HandlePrizeIndexUpdated;
-        eventSystem.OnMustListIndexChanged -= HandleMustListIndexChanged;
+        eventSystem.Unsubscribe<GameStateEventArg>(EventId.GameStateChanged, HandleGameStateChanged);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.PrizeIndexUpdated, HandlePrizeIndexUpdated);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.MustListIndexChanged, HandleMustListIndexChanged);
         
         if (videoPlayerForPlayer != null)
         {
@@ -128,9 +136,9 @@ public class MUISystem : MonoBehaviour, ISystem
     #endregion
     
     #region 事件处理方法
-    private void HandleGameStateChanged(GameState newState)
+    private void HandleGameStateChanged(GameStateEventArg arg)
     {
-        switch (newState)
+        switch (arg.state)
         {
             case GameState.Idle:
                 ShowIdleUI();
@@ -147,10 +155,10 @@ public class MUISystem : MonoBehaviour, ISystem
         }
     }
     
-    private void HandlePrizeIndexUpdated(int prizeIndex)
+    private void HandlePrizeIndexUpdated(IntEventArg arg)
     {
-        Debug.Log($"[UISystem] 更新奖项显示: {prizeIndex}等奖");
-        UpdateTwinkleEffects(prizeIndex);
+        Debug.Log($"[MUISystem] 更新奖项显示: {arg.value}等奖");
+        UpdateTwinkleEffects(arg.value);
     }
     
     private void OnPlayerFrameReady(VideoPlayer vp, long frameIdx)
@@ -162,33 +170,35 @@ public class MUISystem : MonoBehaviour, ISystem
     {
         if (isPlayingCloseCurtain)
         {
-            Debug.Log("[UISystem] 黑屏动画完成，重置UI");
+            Debug.Log("[MUISystem] 黑屏动画完成，重置UI");
             ResetAllUI();
             
             if (curtainVideoPlayer != null && curtainOpenClip != null)
             {
-                Debug.Log("[UISystem] 播放开屏动画");
+                Debug.Log("[MUISystem] 播放开屏动画");
                 curtainVideoPlayer.clip = curtainOpenClip;
                 curtainVideoPlayer.Play();
                 isPlayingCloseCurtain = false;
             }
             else
             {
-                eventSystem.NotifyTransitionComplete();
+                // 发布事件：过渡完成
+                eventSystem.Publish(EventId.TransitionComplete, EmptyEventArg.Instance);
             }
         }
         else
         {
-            Debug.Log("[UISystem] 开屏动画完成，过渡结束");
-            eventSystem.NotifyTransitionComplete();
+            Debug.Log("[MUISystem] 开屏动画完成");
+            // 发布事件：过渡完成
+            eventSystem.Publish(EventId.TransitionComplete, EmptyEventArg.Instance);
         }
     }
     
-    private void HandleMustListIndexChanged(int mustListIndex)
+    private void HandleMustListIndexChanged(IntEventArg arg)
     {
         if (mustListIndexTextMeshPro != null)
         {
-            mustListIndexTextMeshPro.text = mustListIndex.ToString();
+            mustListIndexTextMeshPro.text = arg.value.ToString();
         }
     }
     #endregion
@@ -196,7 +206,7 @@ public class MUISystem : MonoBehaviour, ISystem
     #region UI显示方法
     private void ShowIdleUI()
     {
-        Debug.Log("[UISystem] 显示待机状态");
+        Debug.Log("[MUISystem] 显示待机状态");
         
         ResetAllUI();
         
@@ -208,7 +218,7 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void ShowDrawingUI()
     {
-        Debug.Log("[UISystem] 显示抽奖状态");
+        Debug.Log("[MUISystem] 显示抽奖状态");
         
         hasNotifiedDrawingComplete = false;
         
@@ -235,7 +245,7 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void ShowResultUI()
     {
-        Debug.Log("[UISystem] 显示结果状态");
+        Debug.Log("[MUISystem] 显示结果状态");
         
         if (prizeResultPanel != null)
         {
@@ -244,10 +254,10 @@ public class MUISystem : MonoBehaviour, ISystem
         
         if (prizeResultTextMeshPro != null)
         {
-            prizeResultTextMeshPro.text = _mGameLogicSystem?.LastWinnerID.ToString() ?? "未知";
+            prizeResultTextMeshPro.text = gameLogicSystem?.LastWinnerID.ToString() ?? "未知";
         }
         
-        int prizeIndex = _mGameLogicSystem?.CurrentPrizeIndex ?? 1;
+        int prizeIndex = gameLogicSystem?.CurrentPrizeIndex ?? 1;
         if (prizeResultImage != null && prizeIndex > 0 && prizeIndex <= prizeResultBackgrounds.Count)
         {
             if (prizeIndex == 3)
@@ -282,7 +292,7 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void ShowTransitionUI()
     {
-        Debug.Log("[UISystem] 显示过渡状态");
+        Debug.Log("[MUISystem] 显示过渡状态");
 
         if (crabSwitcher != null)
         {
@@ -303,7 +313,7 @@ public class MUISystem : MonoBehaviour, ISystem
         
         if (curtainVideoPlayer != null && curtainCloseClip != null)
         {
-            Debug.Log("[UISystem] 播放黑屏关闭动画");
+            Debug.Log("[MUISystem] 播放黑屏关闭动画");
             curtainVideoPlayer.clip = curtainCloseClip;
             curtainVideoPlayer.isLooping = false;
             curtainVideoPlayer.Play();
@@ -315,7 +325,7 @@ public class MUISystem : MonoBehaviour, ISystem
     #region 辅助方法
     private void CheckDrawingAnimationProgress()
     {
-        if (_mGameLogicSystem?.CurrentState != GameState.Drawing)
+        if (gameLogicSystem?.CurrentState != GameState.Drawing)
         {
             return;
         }
@@ -347,10 +357,12 @@ public class MUISystem : MonoBehaviour, ISystem
         
         if (currentProgress >= percentOfPlayerRunClip)
         {
-            Debug.Log($"[UISystem] 抽奖动画已播放到 {currentProgress * 100:F1}%（设定值：{percentOfPlayerRunClip * 100:F1}%），准备显示结果");
+            Debug.Log($"[MUISystem] 抽奖动画已播放到 {currentProgress * 100:F1}%，准备显示结果");
             hasNotifiedDrawingComplete = true;
             videoPlayerForPlayer.sendFrameReadyEvents = false;
-            eventSystem.NotifyReadyToShowResult();
+            
+            // 发布事件：准备显示结果
+            eventSystem.Publish(EventId.ReadyToShowResult, EmptyEventArg.Instance);
         }
     }
     
@@ -367,7 +379,7 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void ResetAllUI()
     {
-        Debug.Log("[UISystem] 重置所有UI");
+        Debug.Log("[MUISystem] 重置所有UI");
         
         if (prizeResultPanel != null)
         {
@@ -406,7 +418,7 @@ public class MUISystem : MonoBehaviour, ISystem
             ClearVideoPlayerRenderTexture(videoPlayerForPlayerRunBackground);
         }
         
-        int currentPrizeIndex = _mGameLogicSystem?.CurrentPrizeIndex ?? 1;
+        int currentPrizeIndex = gameLogicSystem?.CurrentPrizeIndex ?? 1;
         UpdateTwinkleEffects(currentPrizeIndex);
     }
     
@@ -447,4 +459,3 @@ public class MUISystem : MonoBehaviour, ISystem
     }
     #endregion
 }
-

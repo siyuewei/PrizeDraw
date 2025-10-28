@@ -2,6 +2,13 @@ using UnityEngine;
 
 /// <summary>
 /// 输入系统 - 负责处理键盘输入并发送相应事件
+/// 
+/// 发布的事件：
+/// - EventId.PrizeDrawRequested - 抽奖（按键1）
+/// - EventId.PrizeIndexChangeRequested - 切换奖项（按键2/3/4/5）
+/// - EventId.ReloadConfigRequested - 重新加载配置（按键C）
+/// - EventId.RestartRequested - 重启（按键R）
+/// - EventId.ChangeMustListIndex - 切换必中榜单（按键A/S/D/F）
 /// </summary>
 public class MInputSystem : MonoBehaviour, ISystem
 {
@@ -11,8 +18,8 @@ public class MInputSystem : MonoBehaviour, ISystem
     private readonly KeyCode keyCode_Prize3 = KeyCode.Alpha3; // 三等奖
     private readonly KeyCode keyCode_Prize4 = KeyCode.Alpha4; // 四等奖
     private readonly KeyCode keyCode_PrizeDraw = KeyCode.Alpha1; // 抽奖键
-    private readonly KeyCode keyCode_Reload = KeyCode.C; // 重新加载配置和黑名单
-    private readonly KeyCode keyCode_Restart = KeyCode.R; // 重新开启一次抽奖
+    private readonly KeyCode keyCode_Reload = KeyCode.C; // 重新加载配置
+    private readonly KeyCode keyCode_Restart = KeyCode.R; // 重启
     private readonly KeyCode keyCode_Must_0 = KeyCode.A;
     private readonly KeyCode keyCode_Must_1 = KeyCode.S;
     private readonly KeyCode keyCode_Must_2 = KeyCode.D;
@@ -21,22 +28,21 @@ public class MInputSystem : MonoBehaviour, ISystem
     
     #region 私有变量
     private MEventSystem eventSystem;
-    private MGameLogicSystem _mGameLogicSystem;
+    private MGameLogicSystem gameLogicSystem;
     #endregion
     
     #region 系统接口实现
     public void Initialize()
     {
-        Debug.Log("[InputSystem] 初始化输入系统");
+        Debug.Log("[MInputSystem] 初始化输入系统");
         
-        // 获取系统引用
         eventSystem = SystemManager.Instance.Events;
-        _mGameLogicSystem = SystemManager.Instance.MGameLogic;
+        gameLogicSystem = SystemManager.Instance.MGameLogic;
     }
     
     public void Cleanup()
     {
-        Debug.Log("[InputSystem] 清理输入系统");
+        Debug.Log("[MInputSystem] 清理输入系统");
     }
     #endregion
     
@@ -52,85 +58,80 @@ public class MInputSystem : MonoBehaviour, ISystem
     #endregion
     
     #region 输入处理方法
-    /// <summary>
-    /// 处理奖项选择输入
-    /// </summary>
     private void HandlePrizeSelection()
     {
         if (Input.GetKeyDown(keyCode_Prize1))
         {
-            eventSystem.RequestPrizeIndexChange(1);
+            // 发布事件：请求切换到1等奖
+            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(1));
         }
         else if (Input.GetKeyDown(keyCode_Prize2))
         {
-            eventSystem.RequestPrizeIndexChange(2);
+            // 发布事件：请求切换到2等奖
+            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(2));
         }
         else if (Input.GetKeyDown(keyCode_Prize3))
         {
-            eventSystem.RequestPrizeIndexChange(3);
+            // 发布事件：请求切换到3等奖
+            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(3));
         }
         else if (Input.GetKeyDown(keyCode_Prize4))
         {
-            eventSystem.RequestPrizeIndexChange(4);
+            // 发布事件：请求切换到4等奖
+            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(4));
         }
     }
     
-    /// <summary>
-    /// 处理抽奖输入
-    /// </summary>
     private void HandlePrizeDraw()
     {
         if (Input.GetKeyDown(keyCode_PrizeDraw))
         {
-            int currentPrizeIndex = _mGameLogicSystem?.CurrentPrizeIndex ?? 1;
-            eventSystem.RequestPrizeDraw(currentPrizeIndex);
+            int currentPrizeIndex = gameLogicSystem?.CurrentPrizeIndex ?? 1;
+            // 发布事件：请求抽奖
+            eventSystem.Publish(EventId.PrizeDrawRequested, new IntEventArg(currentPrizeIndex));
         }
     }
     
-    /// <summary>
-    /// 处理重新加载输入
-    /// </summary>
     private void HandleReload()
     {
         if (Input.GetKeyDown(keyCode_Reload))
         {
-            eventSystem.RequestReloadConfig();
+            // 发布事件：请求重新加载配置
+            eventSystem.Publish(EventId.ReloadConfigRequested, EmptyEventArg.Instance);
         }
     }
 
-    /// <summary>
-    /// 处理重新开始抽奖输入
-    /// </summary>
     private void HandleRestart()
     {
         if (Input.GetKeyDown(keyCode_Restart))
         {
-            eventSystem.RequestRestart();
+            // 发布事件：请求重启
+            eventSystem.Publish(EventId.RestartRequested, EmptyEventArg.Instance);
         }
     }
 
-    /// <summary>
-    /// 处理必中榜单索引切换输入
-    /// </summary>
     private void HandleMustListIndexChange()
     {
         if (Input.GetKeyDown(keyCode_Must_0))
         {
-            eventSystem.ChangeMustListIndex(0);
+            // 发布事件：切换必中榜单到0
+            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(0));
         }
         else if (Input.GetKeyDown(keyCode_Must_1))
         {
-            eventSystem.ChangeMustListIndex(1);
+            // 发布事件：切换必中榜单到1
+            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(1));
         }
         else if (Input.GetKeyDown(keyCode_Must_2))
         {
-            eventSystem.ChangeMustListIndex(2);
+            // 发布事件：切换必中榜单到2
+            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(2));
         }
         else if (Input.GetKeyDown(keyCode_Must_3))
         {
-            eventSystem.ChangeMustListIndex(3);
+            // 发布事件：切换必中榜单到3
+            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(3));
         }
     }
     #endregion
 }
-

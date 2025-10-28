@@ -5,6 +5,20 @@ using Sirenix.OdinInspector;
 
 /// <summary>
 /// 游戏逻辑系统 - 负责游戏状态管理和抽奖逻辑
+/// 
+/// 订阅的事件：
+/// - EventId.PrizeDrawRequested - 请求抽奖
+/// - EventId.PrizeIndexChangeRequested - 请求切换奖项
+/// - EventId.ReloadConfigRequested - 请求重新加载配置
+/// - EventId.RestartRequested - 请求重启
+/// - EventId.ReadyToShowResult - 准备显示结果
+/// - EventId.TransitionComplete - 过渡完成
+/// - EventId.ChangeMustListIndex - 切换必中榜单
+/// 
+/// 发布的事件：
+/// - EventId.GameStateChanged - 游戏状态改变
+/// - EventId.PrizeIndexUpdated - 奖项已更新
+/// - EventId.MustListIndexChanged - 必中榜单索引已改变
 /// </summary>
 public class MGameLogicSystem : MonoBehaviour, ISystem
 {
@@ -18,7 +32,7 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
     
     #region 私有变量
     private int mustListIndex = 0;
-    private MConfigSystem _mConfigSystem;
+    private MConfigSystem configSystem;
     private MEventSystem eventSystem;
     #endregion
     
@@ -39,27 +53,22 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
     #region 系统接口实现
     public void Initialize()
     {
-        Debug.Log("[GameLogicSystem] 初始化游戏逻辑系统");
+        Debug.Log("[MGameLogicSystem] 初始化游戏逻辑系统");
         
-        // 获取系统引用
-        _mConfigSystem = SystemManager.Instance.MConfig;
+        configSystem = SystemManager.Instance.MConfig;
         eventSystem = SystemManager.Instance.Events;
         
-        // 设置随机数种子
         Random.InitState(System.DateTime.Now.Millisecond);
         
-        // 订阅事件
         SubscribeToEvents();
-        
-        // 初始化到待机状态
         ChangeState(GameState.Idle);
         
-        Debug.Log("[GameLogicSystem] 游戏逻辑系统初始化完成");
+        Debug.Log("[MGameLogicSystem] 游戏逻辑系统初始化完成");
     }
     
     public void Cleanup()
     {
-        Debug.Log("[GameLogicSystem] 清理游戏逻辑系统");
+        Debug.Log("[MGameLogicSystem] 清理游戏逻辑系统");
         UnsubscribeFromEvents();
     }
     #endregion
@@ -67,33 +76,34 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
     #region 事件订阅管理
     private void SubscribeToEvents()
     {
-        eventSystem.OnPrizeDrawRequested += HandlePrizeDrawRequested;
-        eventSystem.OnPrizeIndexChangeRequested += HandlePrizeIndexChangeRequested;
-        eventSystem.OnReloadConfigRequested += HandleReloadConfigRequested;
-        eventSystem.OnRestartRequested += HandleRestartRequested;
-        eventSystem.OnReadyToShowResult += HandleReadyToShowResult;
-        eventSystem.OnTransitionComplete += HandleTransitionComplete;
-        eventSystem.OnChangeMustListIndex += HandleChangeMustListIndex;
+        // 搜索 "EventId.PrizeDrawRequested" 可以找到所有发布此事件的位置
+        eventSystem.Subscribe<IntEventArg>(EventId.PrizeDrawRequested, HandlePrizeDrawRequested);
+        eventSystem.Subscribe<IntEventArg>(EventId.PrizeIndexChangeRequested, HandlePrizeIndexChangeRequested);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.ReloadConfigRequested, HandleReloadConfigRequested);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.RestartRequested, HandleRestartRequested);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.ReadyToShowResult, HandleReadyToShowResult);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.TransitionComplete, HandleTransitionComplete);
+        eventSystem.Subscribe<IntEventArg>(EventId.ChangeMustListIndex, HandleChangeMustListIndex);
     }
     
     private void UnsubscribeFromEvents()
     {
-        eventSystem.OnPrizeDrawRequested -= HandlePrizeDrawRequested;
-        eventSystem.OnPrizeIndexChangeRequested -= HandlePrizeIndexChangeRequested;
-        eventSystem.OnReloadConfigRequested -= HandleReloadConfigRequested;
-        eventSystem.OnRestartRequested -= HandleRestartRequested;
-        eventSystem.OnReadyToShowResult -= HandleReadyToShowResult;
-        eventSystem.OnTransitionComplete -= HandleTransitionComplete;
-        eventSystem.OnChangeMustListIndex -= HandleChangeMustListIndex;
+        eventSystem.Unsubscribe<IntEventArg>(EventId.PrizeDrawRequested, HandlePrizeDrawRequested);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.PrizeIndexChangeRequested, HandlePrizeIndexChangeRequested);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.ReloadConfigRequested, HandleReloadConfigRequested);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.RestartRequested, HandleRestartRequested);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.ReadyToShowResult, HandleReadyToShowResult);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.TransitionComplete, HandleTransitionComplete);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.ChangeMustListIndex, HandleChangeMustListIndex);
     }
     #endregion
     
     #region 事件处理方法
-    private void HandlePrizeDrawRequested(int prizeIndex)
+    private void HandlePrizeDrawRequested(IntEventArg arg)
     {
         if (CurrentState != GameState.Idle)
         {
-            Debug.LogWarning($"[GameLogicSystem] 当前状态为 {CurrentState}，无法进行抽奖");
+            Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法进行抽奖");
             return;
         }
         
@@ -101,50 +111,53 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         ChangeState(GameState.Drawing);
     }
     
-    private void HandlePrizeIndexChangeRequested(int prizeIndex)
+    private void HandlePrizeIndexChangeRequested(IntEventArg arg)
     {
+        int prizeIndex = arg.value;
+        
         if (CurrentState != GameState.Idle)
         {
-            Debug.LogWarning($"[GameLogicSystem] 当前状态为 {CurrentState}，无法切换奖项");
+            Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法切换奖项");
             return;
         }
         
         if (prizeIndex < 1 || prizeIndex > 4)
         {
-            Debug.LogWarning($"[GameLogicSystem] 无效的奖项索引: {prizeIndex}");
+            Debug.LogWarning($"[MGameLogicSystem] 无效的奖项索引: {prizeIndex}");
             return;
         }
         
         CurrentPrizeIndex = prizeIndex;
-        Debug.Log($"[GameLogicSystem] 奖项已切换到: {prizeIndex}等奖");
+        Debug.Log($"[MGameLogicSystem] 奖项已切换到: {prizeIndex}等奖");
         
-        eventSystem.NotifyPrizeIndexUpdated(prizeIndex);
+        // 发布事件：奖项已更新
+        eventSystem.Publish(EventId.PrizeIndexUpdated, new IntEventArg(prizeIndex));
     }
     
-    private void HandleReloadConfigRequested()
+    private void HandleReloadConfigRequested(EmptyEventArg arg)
     {
         if (CurrentState != GameState.Idle)
         {
-            Debug.LogWarning($"[GameLogicSystem] 当前状态为 {CurrentState}，无法重新加载配置");
+            Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法重新加载配置");
             return;
         }
         
-        _mConfigSystem.LoadAllData();
-        Debug.Log("[GameLogicSystem] 重新加载配置完成");
+        configSystem.LoadAllData();
+        Debug.Log("[MGameLogicSystem] 重新加载配置完成");
     }
     
-    private void HandleRestartRequested()
+    private void HandleRestartRequested(EmptyEventArg arg)
     {
         if (CurrentState != GameState.ShowingResult)
         {
-            Debug.LogWarning($"[GameLogicSystem] 当前状态为 {CurrentState}，无法重启");
+            Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法重启");
             return;
         }
         
         ChangeState(GameState.Transitioning);
     }
     
-    private void HandleReadyToShowResult()
+    private void HandleReadyToShowResult(EmptyEventArg arg)
     {
         if (CurrentState != GameState.Drawing)
         {
@@ -154,7 +167,7 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         ChangeState(GameState.ShowingResult);
     }
     
-    private void HandleTransitionComplete()
+    private void HandleTransitionComplete(EmptyEventArg arg)
     {
         if (CurrentState != GameState.Transitioning)
         {
@@ -164,11 +177,13 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         ChangeState(GameState.Idle);
     }
     
-    private void HandleChangeMustListIndex(int mustListIndex)
+    private void HandleChangeMustListIndex(IntEventArg arg)
     {
-        this.mustListIndex = mustListIndex;
-        Debug.Log($"[GameLogicSystem] 必中榜单索引已切换到: {this.mustListIndex}");
-        eventSystem.NotifyMustListIndexChanged(mustListIndex);
+        this.mustListIndex = arg.value;
+        Debug.Log($"[MGameLogicSystem] 必中榜单索引已切换到: {this.mustListIndex}");
+        
+        // 发布事件：必中榜单索引已改变
+        eventSystem.Publish(EventId.MustListIndexChanged, new IntEventArg(this.mustListIndex));
     }
     #endregion
     
@@ -180,17 +195,18 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
             return;
         }
         
-        Debug.Log($"[GameLogicSystem] 状态切换: {CurrentState} -> {newState}");
+        Debug.Log($"[MGameLogicSystem] 状态切换: {CurrentState} -> {newState}");
         CurrentState = newState;
         
-        eventSystem.NotifyStateChanged(newState);
+        // 发布事件：游戏状态改变
+        eventSystem.Publish(EventId.GameStateChanged, new GameStateEventArg(newState));
     }
     #endregion
     
     #region 抽奖逻辑
     private void ExecutePrizeDraw()
     {
-        bool isSpecialPrize = (CurrentPrizeIndex == _mConfigSystem.Config.specialPrizeIndex);
+        bool isSpecialPrize = (CurrentPrizeIndex == configSystem.Config.specialPrizeIndex);
 
         if (isSpecialPrize)
         {
@@ -202,20 +218,17 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         }
     }
     
-    /// <summary>
-    /// 特别奖抽奖逻辑
-    /// </summary>
     private void DrawSpecialPrize()
     {
-        var config = _mConfigSystem.Config;
-        var specialWinners = _mConfigSystem.SpecialWinnerIndices;
+        var config = configSystem.Config;
+        var specialWinners = configSystem.SpecialWinnerIndices;
         
         int specialTotalPeople = config.specialMaxPeopleIndex - config.specialMinPeopleIndex + 1;
         int specialAvailableCount = specialTotalPeople - specialWinners.Count;
 
         if (specialAvailableCount <= 0)
         {
-            Debug.LogWarning("[GameLogicSystem] 所有特别奖人员都已被抽中，无法继续抽奖。");
+            Debug.LogWarning("[MGameLogicSystem] 所有特别奖人员都已被抽中");
             return;
         }
 
@@ -228,7 +241,7 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
             attemptCount++;
             if (attemptCount > maxAttempts)
             {
-                Debug.LogError("[GameLogicSystem] 特别奖抽奖尝试次数过多，已停止抽奖。");
+                Debug.LogError("[MGameLogicSystem] 特别奖抽奖尝试次数过多");
                 return;
             }
 
@@ -236,25 +249,22 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         } while (specialWinners.Contains(drawnIndex) || drawnIndex.ToString().Contains("4"));
         
         LastWinnerID = drawnIndex;
-        _mConfigSystem.AddWinner(CurrentPrizeIndex, LastWinnerID);
+        configSystem.AddWinner(CurrentPrizeIndex, LastWinnerID);
         
-        Debug.Log($"[GameLogicSystem] 【特别奖】第 {CurrentPrizeIndex} 等奖，中奖号码：{LastWinnerID}。特别奖已中奖人数：{specialWinners.Count}");
+        Debug.Log($"[MGameLogicSystem] 【特别奖】第{CurrentPrizeIndex}等奖，中奖号码：{LastWinnerID}");
     }
     
-    /// <summary>
-    /// 普通奖抽奖逻辑
-    /// </summary>
     private void DrawCommonPrize()
     {
-        var config = _mConfigSystem.Config;
-        var commonWinners = _mConfigSystem.CommonWinnerIndices;
-        var blackList = _mConfigSystem.BlackList;
+        var config = configSystem.Config;
+        var commonWinners = configSystem.CommonWinnerIndices;
+        var blackList = configSystem.BlackList;
         
-        int commonAvailableCount = _mConfigSystem.GetCommonAvailablePeopleCount();
+        int commonAvailableCount = configSystem.GetCommonAvailablePeopleCount();
         
         if (commonAvailableCount <= 0)
         {
-            Debug.LogWarning("[GameLogicSystem] 没有可用人数，无法进行抽奖。");
+            Debug.LogWarning("[MGameLogicSystem] 没有可用人数");
             return;
         }
 
@@ -262,17 +272,15 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
 
         if (totalPossibleDraws <= 0)
         {
-            Debug.LogWarning("[GameLogicSystem] 所有符合条件的人员都已被抽中，无法继续抽奖。");
+            Debug.LogWarning("[MGameLogicSystem] 所有人员都已被抽中");
             return;
         }
 
-        // 读取必中榜单
-        List<int> mustWinList = _mConfigSystem.ReadMustWinList(mustListIndex);
+        List<int> mustWinList = configSystem.ReadMustWinList(mustListIndex);
         
         int drawnIndex = -1;
         bool drawnFromMustWinList = false;
         
-        // 先尝试从必中榜单中抽取
         if (mustWinList.Count > 0)
         {
             List<int> validMustWinList = new List<int>();
@@ -292,15 +300,10 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
                 int randomIndex = Random.Range(0, validMustWinList.Count);
                 drawnIndex = validMustWinList[randomIndex];
                 drawnFromMustWinList = true;
-                Debug.Log($"[GameLogicSystem] 从必中榜单中抽取，可选人数：{validMustWinList.Count}");
-            }
-            else
-            {
-                Debug.Log("[GameLogicSystem] 必中榜单中没有符合条件的人员，将进行正常抽奖。");
+                Debug.Log($"[MGameLogicSystem] 从必中榜单中抽取，可选人数：{validMustWinList.Count}");
             }
         }
         
-        // 正常抽奖
         if (drawnIndex == -1)
         {
             int attemptCount = 0; 
@@ -313,7 +316,7 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
 
                 if (attemptCount > maxAttempts)
                 {
-                    Debug.LogError("[GameLogicSystem] 抽奖尝试次数过多，已停止抽奖。");
+                    Debug.LogError("[MGameLogicSystem] 抽奖尝试次数过多");
                     return;
                 }
                 
@@ -321,25 +324,21 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         }
 
         LastWinnerID = drawnIndex;
-        _mConfigSystem.AddWinner(CurrentPrizeIndex, LastWinnerID);
+        configSystem.AddWinner(CurrentPrizeIndex, LastWinnerID);
         
         string drawSource = drawnFromMustWinList ? "【必中榜单】" : "【正常抽奖】";
-        Debug.Log($"[GameLogicSystem] {drawSource}第 {CurrentPrizeIndex} 等奖，中奖号码：{LastWinnerID}。普通奖已中奖人数：{commonWinners.Count}");
+        Debug.Log($"[MGameLogicSystem] {drawSource}第{CurrentPrizeIndex}等奖，中奖号码：{LastWinnerID}");
     }
     
-    /// <summary>
-    /// 清除抽奖历史
-    /// </summary>
     public void ClearDrawHistory()
     {
         if (CurrentState != GameState.Idle)
         {
-            Debug.LogWarning($"[GameLogicSystem] 当前状态为 {CurrentState}，无法清除抽奖历史");
+            Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法清除历史");
             return;
         }
 
-        _mConfigSystem.ClearDrawHistory();
+        configSystem.ClearDrawHistory();
     }
     #endregion
 }
-
