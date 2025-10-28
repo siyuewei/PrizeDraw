@@ -1,14 +1,14 @@
-using Sirenix.OdinInspector;
 using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UI;
 using UnityEngine.Video;
 
 /// <summary>
 /// UI系统 - 负责监听游戏状态变化并更新UI显示
+/// 
+/// 使用方式：
+/// 1. 在场景中添加UIReferences组件
+/// 2. 在UIReferences中设置UIConfig资产和场景UI引用
+/// 3. MUISystem会自动从UIReferences获取配置
 /// 
 /// 订阅的事件（GameLogic → UI）：
 /// - GameLogic_UI_StateChanged - 游戏状态改变
@@ -19,55 +19,12 @@ using UnityEngine.Video;
 /// - UI_GameLogic_ReadyToShowResult - 抽奖动画完成，准备显示结果
 /// - UI_GameLogic_TransitionComplete - 过渡动画完成
 /// </summary>
+[RequireComponent(typeof(UIReferences))]
 public class MUISystem : MonoBehaviour, ISystem
 {
-    #region Inspector配置
-    [Header("星星特效——对应不同奖项")]
-    public List<GameObject> twinkleEffects;
-    
-    [Header("中奖结果背景图片")]
-    public List<Sprite> prizeResultBackgrounds;
-
-    [Header("螃蟹背景图片")]
-    public List<Sprite> crabBackgrounds;
-
-    [Header("星星棒")]
-    public List<Sprite> starBackgrounds;
-
-    [Header("中奖结果文字位置")]
-    public List<Vector3> prizeResultRects;
-    
-    [Header("中奖结果文字颜色")]
-    public List<Color> prizeResultTextColors;
-    
-    [Header("中奖结果背景图Color")]
-    public List<Color> prizeResultColors;
-    
-    [Header("人物动画配置")]
-    public VideoClip playerIdleClip;
-    public VideoClip playerRunClip;
-    public VideoPlayer videoPlayerForPlayer;
-    [Range(0, 1)]
-    [Tooltip("抽奖动画播放的百分比")]
-    public float percentOfPlayerRunClip = 0.5f;
-    public GameObject playerRunBackgroundObject;
-    public VideoPlayer videoPlayerForPlayerRunBackground;
-    
-    [Header("中奖结果显示配置")]
-    public GameObject prizeResultPanel;
-    [FormerlySerializedAs("prizeResultText")] 
-    public TextMeshProUGUI prizeResultTextMeshPro;
-    public Image prizeResultImage;
-    public Image prizeResultBackgroundImage;
-    
-    [Header("两次抽奖之间的过渡幕布")]
-    public GameObject curtainPanel;
-    public VideoPlayer curtainVideoPlayer;
-    public VideoClip curtainCloseClip;
-    public VideoClip curtainOpenClip;
-
-    [Header("必中榜单序号")]
-    public TextMeshProUGUI mustListIndexTextMeshPro;
+    #region 引用
+    private UIReferences uiRefs;
+    private UIConfig config;
     #endregion
     
     #region 私有变量
@@ -88,7 +45,24 @@ public class MUISystem : MonoBehaviour, ISystem
         eventSystem = SystemManager.Instance.Events;
         gameLogicSystem = SystemManager.Instance.MGameLogic;
         
+        // 获取UI引用组件
+        uiRefs = FindObjectOfType<UIReferences>();
+        if (uiRefs == null)
+        {
+            Debug.LogError("[MUISystem] 场景中未找到UIReferences组件！请在场景中添加该组件并配置UI引用。");
+            return;
+        }
+        
+        config = uiRefs.config;
+        if (config == null)
+        {
+            Debug.LogError("[MUISystem] UIReferences中未设置UIConfig！请在Inspector中指定配置资产。");
+            return;
+        }
+        
         SubscribeToEvents();
+        
+        Debug.Log("[MUISystem] UI系统初始化完成");
     }
     
     public void Cleanup()
@@ -106,14 +80,14 @@ public class MUISystem : MonoBehaviour, ISystem
         eventSystem.Subscribe<IntEventArg>(EventId.GameLogic_UI_PrizeIndexUpdated, HandlePrizeIndexUpdated);
         eventSystem.Subscribe<IntEventArg>(EventId.GameLogic_UI_MustListIndexChanged, HandleMustListIndexChanged);
         
-        if (videoPlayerForPlayer != null)
+        if (uiRefs.videoPlayerForPlayer != null)
         {
-            videoPlayerForPlayer.frameReady += OnPlayerFrameReady;
+            uiRefs.videoPlayerForPlayer.frameReady += OnPlayerFrameReady;
         }
         
-        if (curtainVideoPlayer != null)
+        if (uiRefs.curtainVideoPlayer != null)
         {
-            curtainVideoPlayer.loopPointReached += OnCurtainVideoFinished;
+            uiRefs.curtainVideoPlayer.loopPointReached += OnCurtainVideoFinished;
         }
     }
     
@@ -123,14 +97,14 @@ public class MUISystem : MonoBehaviour, ISystem
         eventSystem.Unsubscribe<IntEventArg>(EventId.GameLogic_UI_PrizeIndexUpdated, HandlePrizeIndexUpdated);
         eventSystem.Unsubscribe<IntEventArg>(EventId.GameLogic_UI_MustListIndexChanged, HandleMustListIndexChanged);
         
-        if (videoPlayerForPlayer != null)
+        if (uiRefs != null && uiRefs.videoPlayerForPlayer != null)
         {
-            videoPlayerForPlayer.frameReady -= OnPlayerFrameReady;
+            uiRefs.videoPlayerForPlayer.frameReady -= OnPlayerFrameReady;
         }
         
-        if (curtainVideoPlayer != null)
+        if (uiRefs != null && uiRefs.curtainVideoPlayer != null)
         {
-            curtainVideoPlayer.loopPointReached -= OnCurtainVideoFinished;
+            uiRefs.curtainVideoPlayer.loopPointReached -= OnCurtainVideoFinished;
         }
     }
     #endregion
@@ -173,11 +147,11 @@ public class MUISystem : MonoBehaviour, ISystem
             Debug.Log("[MUISystem] 黑屏动画完成，重置UI");
             ResetAllUI();
             
-            if (curtainVideoPlayer != null && curtainOpenClip != null)
+            if (uiRefs.curtainVideoPlayer != null && config.curtainOpenClip != null)
             {
                 Debug.Log("[MUISystem] 播放开屏动画");
-                curtainVideoPlayer.clip = curtainOpenClip;
-                curtainVideoPlayer.Play();
+                uiRefs.curtainVideoPlayer.clip = config.curtainOpenClip;
+                uiRefs.curtainVideoPlayer.Play();
                 isPlayingCloseCurtain = false;
             }
             else
@@ -196,9 +170,9 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void HandleMustListIndexChanged(IntEventArg arg)
     {
-        if (mustListIndexTextMeshPro != null)
+        if (uiRefs.mustListIndexTextMeshPro != null)
         {
-            mustListIndexTextMeshPro.text = arg.value.ToString();
+            uiRefs.mustListIndexTextMeshPro.text = arg.value.ToString();
         }
     }
     #endregion
@@ -210,9 +184,9 @@ public class MUISystem : MonoBehaviour, ISystem
         
         ResetAllUI();
         
-        if (curtainPanel != null)
+        if (uiRefs.curtainPanel != null)
         {
-            curtainPanel.SetActive(false);
+            uiRefs.curtainPanel.SetActive(false);
         }
     }
     
@@ -222,23 +196,23 @@ public class MUISystem : MonoBehaviour, ISystem
         
         hasNotifiedDrawingComplete = false;
         
-        if (videoPlayerForPlayer != null && playerRunClip != null)
+        if (uiRefs.videoPlayerForPlayer != null && config.playerRunClip != null)
         {
-            videoPlayerForPlayer.clip = playerRunClip;
-            videoPlayerForPlayer.isLooping = false;
-            videoPlayerForPlayer.sendFrameReadyEvents = true;
-            videoPlayerForPlayer.Play();
+            uiRefs.videoPlayerForPlayer.clip = config.playerRunClip;
+            uiRefs.videoPlayerForPlayer.isLooping = false;
+            uiRefs.videoPlayerForPlayer.sendFrameReadyEvents = true;
+            uiRefs.videoPlayerForPlayer.Play();
         }
         
-        if (playerRunBackgroundObject != null)
+        if (uiRefs.playerRunBackgroundObject != null)
         {
-            playerRunBackgroundObject.SetActive(true);
-            if (videoPlayerForPlayerRunBackground != null)
+            uiRefs.playerRunBackgroundObject.SetActive(true);
+            if (uiRefs.videoPlayerForPlayerRunBackground != null)
             {
-                ClearVideoPlayerRenderTexture(videoPlayerForPlayerRunBackground);
+                ClearVideoPlayerRenderTexture(uiRefs.videoPlayerForPlayerRunBackground);
                 
-                videoPlayerForPlayerRunBackground.isLooping = true;
-                videoPlayerForPlayerRunBackground.Play();
+                uiRefs.videoPlayerForPlayerRunBackground.isLooping = true;
+                uiRefs.videoPlayerForPlayerRunBackground.Play();
             }
         }
     }
@@ -247,18 +221,18 @@ public class MUISystem : MonoBehaviour, ISystem
     {
         Debug.Log("[MUISystem] 显示结果状态");
         
-        if (prizeResultPanel != null)
+        if (uiRefs.prizeResultPanel != null)
         {
-            prizeResultPanel.SetActive(true);
+            uiRefs.prizeResultPanel.SetActive(true);
         }
         
-        if (prizeResultTextMeshPro != null)
+        if (uiRefs.prizeResultTextMeshPro != null)
         {
-            prizeResultTextMeshPro.text = gameLogicSystem?.LastWinnerID.ToString() ?? "未知";
+            uiRefs.prizeResultTextMeshPro.text = gameLogicSystem?.LastWinnerID.ToString() ?? "未知";
         }
         
         int prizeIndex = gameLogicSystem?.CurrentPrizeIndex ?? 1;
-        if (prizeResultImage != null && prizeIndex > 0 && prizeIndex <= prizeResultBackgrounds.Count)
+        if (uiRefs.prizeResultImage != null && prizeIndex > 0 && prizeIndex <= config.prizeResultBackgrounds.Count)
         {
             if (prizeIndex == 3)
             {
@@ -270,23 +244,23 @@ public class MUISystem : MonoBehaviour, ISystem
             }
             else
             {
-                prizeResultImage.sprite = prizeResultBackgrounds[prizeIndex - 1];
+                uiRefs.prizeResultImage.sprite = config.prizeResultBackgrounds[prizeIndex - 1];
             }
         }
 
-        if (prizeResultBackgroundImage != null && prizeIndex > 0 && prizeIndex <= prizeResultColors.Count)
+        if (uiRefs.prizeResultBackgroundImage != null && prizeIndex > 0 && prizeIndex <= config.prizeResultColors.Count)
         {
-            prizeResultBackgroundImage.color = prizeResultColors[prizeIndex - 1];
+            uiRefs.prizeResultBackgroundImage.color = config.prizeResultColors[prizeIndex - 1];
         }
         
-        if (prizeResultTextMeshPro != null && prizeIndex > 0 && prizeIndex <= prizeResultRects.Count)
+        if (uiRefs.prizeResultTextMeshPro != null && prizeIndex > 0 && prizeIndex <= config.prizeResultRects.Count)
         {
-            prizeResultTextMeshPro.rectTransform.localPosition = prizeResultRects[prizeIndex - 1];
+            uiRefs.prizeResultTextMeshPro.rectTransform.localPosition = config.prizeResultRects[prizeIndex - 1];
         }
         
-        if (prizeResultTextMeshPro != null && prizeIndex > 0 && prizeIndex <= prizeResultTextColors.Count)
+        if (uiRefs.prizeResultTextMeshPro != null && prizeIndex > 0 && prizeIndex <= config.prizeResultTextColors.Count)
         {
-            prizeResultTextMeshPro.color = prizeResultTextColors[prizeIndex - 1];
+            uiRefs.prizeResultTextMeshPro.color = config.prizeResultTextColors[prizeIndex - 1];
         }
     }
     
@@ -306,17 +280,17 @@ public class MUISystem : MonoBehaviour, ISystem
             starSwitcher = null;
         }
 
-        if (curtainPanel != null)
+        if (uiRefs.curtainPanel != null)
         {
-            curtainPanel.SetActive(true);
+            uiRefs.curtainPanel.SetActive(true);
         }
         
-        if (curtainVideoPlayer != null && curtainCloseClip != null)
+        if (uiRefs.curtainVideoPlayer != null && config.curtainCloseClip != null)
         {
             Debug.Log("[MUISystem] 播放黑屏关闭动画");
-            curtainVideoPlayer.clip = curtainCloseClip;
-            curtainVideoPlayer.isLooping = false;
-            curtainVideoPlayer.Play();
+            uiRefs.curtainVideoPlayer.clip = config.curtainCloseClip;
+            uiRefs.curtainVideoPlayer.isLooping = false;
+            uiRefs.curtainVideoPlayer.Play();
             isPlayingCloseCurtain = true;
         }
     }
@@ -335,18 +309,18 @@ public class MUISystem : MonoBehaviour, ISystem
             return;
         }
         
-        if (videoPlayerForPlayer == null || videoPlayerForPlayer.clip == null)
+        if (uiRefs.videoPlayerForPlayer == null || uiRefs.videoPlayerForPlayer.clip == null)
         {
             return;
         }
         
-        if (!videoPlayerForPlayer.isPlaying)
+        if (!uiRefs.videoPlayerForPlayer.isPlaying)
         {
             return;
         }
         
-        double currentTime = videoPlayerForPlayer.time;
-        double totalTime = videoPlayerForPlayer.clip.length;
+        double currentTime = uiRefs.videoPlayerForPlayer.time;
+        double totalTime = uiRefs.videoPlayerForPlayer.clip.length;
 
         if (totalTime <= 0)
         {
@@ -355,11 +329,11 @@ public class MUISystem : MonoBehaviour, ISystem
         
         float currentProgress = (float)(currentTime / totalTime);
         
-        if (currentProgress >= percentOfPlayerRunClip)
+        if (currentProgress >= config.percentOfPlayerRunClip)
         {
             Debug.Log($"[MUISystem] 抽奖动画已播放到 {currentProgress * 100:F1}%，准备显示结果");
             hasNotifiedDrawingComplete = true;
-            videoPlayerForPlayer.sendFrameReadyEvents = false;
+            uiRefs.videoPlayerForPlayer.sendFrameReadyEvents = false;
             
             // 发布事件：准备显示结果（UI → GameLogic）
             eventSystem.Publish(EventId.UI_GameLogic_ReadyToShowResult, EmptyEventArg.Instance);
@@ -368,11 +342,11 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void UpdateTwinkleEffects(int prizeIndex)
     {
-        if (prizeIndex > 0 && prizeIndex <= twinkleEffects.Count)
+        if (prizeIndex > 0 && prizeIndex <= uiRefs.twinkleEffects.Count)
         {
-            for (int i = 0; i < twinkleEffects.Count; i++)
+            for (int i = 0; i < uiRefs.twinkleEffects.Count; i++)
             {
-                twinkleEffects[i].SetActive(i == prizeIndex - 1);
+                uiRefs.twinkleEffects[i].SetActive(i == prizeIndex - 1);
             }
         }
     }
@@ -381,41 +355,41 @@ public class MUISystem : MonoBehaviour, ISystem
     {
         Debug.Log("[MUISystem] 重置所有UI");
         
-        if (prizeResultPanel != null)
+        if (uiRefs.prizeResultPanel != null)
         {
-            prizeResultPanel.SetActive(false);
+            uiRefs.prizeResultPanel.SetActive(false);
         }
         
-        if (prizeResultTextMeshPro != null)
+        if (uiRefs.prizeResultTextMeshPro != null)
         {
-            prizeResultTextMeshPro.text = "";
+            uiRefs.prizeResultTextMeshPro.text = "";
         }
         
-        if (prizeResultImage != null)
+        if (uiRefs.prizeResultImage != null)
         {
-            prizeResultImage.sprite = null;
+            uiRefs.prizeResultImage.sprite = null;
         }
         
-        if (videoPlayerForPlayer != null && playerIdleClip != null)
+        if (uiRefs.videoPlayerForPlayer != null && config.playerIdleClip != null)
         {
-            videoPlayerForPlayer.clip = playerIdleClip;
-            videoPlayerForPlayer.isLooping = true;
-            videoPlayerForPlayer.Play();
+            uiRefs.videoPlayerForPlayer.clip = config.playerIdleClip;
+            uiRefs.videoPlayerForPlayer.isLooping = true;
+            uiRefs.videoPlayerForPlayer.Play();
         }
         
-        if (playerRunBackgroundObject != null)
+        if (uiRefs.playerRunBackgroundObject != null)
         {
-            playerRunBackgroundObject.SetActive(false);
+            uiRefs.playerRunBackgroundObject.SetActive(false);
         }
         
-        if (videoPlayerForPlayerRunBackground != null)
+        if (uiRefs.videoPlayerForPlayerRunBackground != null)
         {
-            if (videoPlayerForPlayerRunBackground.isPlaying)
+            if (uiRefs.videoPlayerForPlayerRunBackground.isPlaying)
             {
-                videoPlayerForPlayerRunBackground.Stop();
+                uiRefs.videoPlayerForPlayerRunBackground.Stop();
             }
             
-            ClearVideoPlayerRenderTexture(videoPlayerForPlayerRunBackground);
+            ClearVideoPlayerRenderTexture(uiRefs.videoPlayerForPlayerRunBackground);
         }
         
         int currentPrizeIndex = gameLogicSystem?.CurrentPrizeIndex ?? 1;
@@ -441,9 +415,9 @@ public class MUISystem : MonoBehaviour, ISystem
         int index = 0;
         while (true)
         {
-            prizeResultImage.sprite = crabBackgrounds[index];
-            index = (index + 1) % crabBackgrounds.Count;
-            yield return new WaitForSeconds(0.1f);
+            uiRefs.prizeResultImage.sprite = config.crabBackgrounds[index];
+            index = (index + 1) % config.crabBackgrounds.Count;
+            yield return new WaitForSeconds(config.crabSwitchInterval);
         }
     }
 
@@ -452,9 +426,9 @@ public class MUISystem : MonoBehaviour, ISystem
         int index = 0;
         while (true)
         {
-            prizeResultImage.sprite = starBackgrounds[index];
-            index = (index + 1) % starBackgrounds.Count;
-            yield return new WaitForSeconds(0.5f);
+            uiRefs.prizeResultImage.sprite = config.starBackgrounds[index];
+            index = (index + 1) % config.starBackgrounds.Count;
+            yield return new WaitForSeconds(config.starSwitchInterval);
         }
     }
     #endregion
