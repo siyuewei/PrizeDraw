@@ -10,14 +10,14 @@ using UnityEngine.Video;
 /// <summary>
 /// UI系统 - 负责监听游戏状态变化并更新UI显示
 /// 
-/// 订阅的事件：
-/// - EventId.GameStateChanged - 游戏状态改变
-/// - EventId.PrizeIndexUpdated - 奖项已更新
-/// - EventId.MustListIndexChanged - 必中榜单索引改变
+/// 订阅的事件（GameLogic → UI）：
+/// - GameLogic_UI_StateChanged - 游戏状态改变
+/// - GameLogic_UI_PrizeIndexUpdated - 奖项已更新
+/// - GameLogic_UI_MustListIndexChanged - 必中榜单索引改变
 /// 
-/// 发布的事件：
-/// - EventId.ReadyToShowResult - 抽奖动画完成，准备显示结果
-/// - EventId.TransitionComplete - 过渡动画完成
+/// 发布的事件（UI → GameLogic）：
+/// - UI_GameLogic_ReadyToShowResult - 抽奖动画完成，准备显示结果
+/// - UI_GameLogic_TransitionComplete - 过渡动画完成
 /// </summary>
 public class MUISystem : MonoBehaviour, ISystem
 {
@@ -101,10 +101,10 @@ public class MUISystem : MonoBehaviour, ISystem
     #region 事件订阅管理
     private void SubscribeToEvents()
     {
-        // 搜索 "EventId.GameStateChanged" 可以找到所有发布此事件的位置
-        eventSystem.Subscribe<GameStateEventArg>(EventId.GameStateChanged, HandleGameStateChanged);
-        eventSystem.Subscribe<IntEventArg>(EventId.PrizeIndexUpdated, HandlePrizeIndexUpdated);
-        eventSystem.Subscribe<IntEventArg>(EventId.MustListIndexChanged, HandleMustListIndexChanged);
+        // 订阅来自GameLogicSystem的事件
+        eventSystem.Subscribe<GameStateEventArg>(EventId.GameLogic_UI_StateChanged, HandleGameStateChanged);
+        eventSystem.Subscribe<IntEventArg>(EventId.GameLogic_UI_PrizeIndexUpdated, HandlePrizeIndexUpdated);
+        eventSystem.Subscribe<IntEventArg>(EventId.GameLogic_UI_MustListIndexChanged, HandleMustListIndexChanged);
         
         if (videoPlayerForPlayer != null)
         {
@@ -119,9 +119,9 @@ public class MUISystem : MonoBehaviour, ISystem
     
     private void UnsubscribeFromEvents()
     {
-        eventSystem.Unsubscribe<GameStateEventArg>(EventId.GameStateChanged, HandleGameStateChanged);
-        eventSystem.Unsubscribe<IntEventArg>(EventId.PrizeIndexUpdated, HandlePrizeIndexUpdated);
-        eventSystem.Unsubscribe<IntEventArg>(EventId.MustListIndexChanged, HandleMustListIndexChanged);
+        eventSystem.Unsubscribe<GameStateEventArg>(EventId.GameLogic_UI_StateChanged, HandleGameStateChanged);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.GameLogic_UI_PrizeIndexUpdated, HandlePrizeIndexUpdated);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.GameLogic_UI_MustListIndexChanged, HandleMustListIndexChanged);
         
         if (videoPlayerForPlayer != null)
         {
@@ -140,16 +140,16 @@ public class MUISystem : MonoBehaviour, ISystem
     {
         switch (arg.state)
         {
-            case GameState.Idle:
+            case GameState.WaitingForDraw:
                 ShowIdleUI();
                 break;
-            case GameState.Drawing:
+            case GameState.DrawingInProgress:
                 ShowDrawingUI();
                 break;
-            case GameState.ShowingResult:
+            case GameState.ShowingWinner:
                 ShowResultUI();
                 break;
-            case GameState.Transitioning:
+            case GameState.TransitionToNext:
                 ShowTransitionUI();
                 break;
         }
@@ -182,15 +182,15 @@ public class MUISystem : MonoBehaviour, ISystem
             }
             else
             {
-                // 发布事件：过渡完成
-                eventSystem.Publish(EventId.TransitionComplete, EmptyEventArg.Instance);
+                // 发布事件：过渡完成（UI → GameLogic）
+                eventSystem.Publish(EventId.UI_GameLogic_TransitionComplete, EmptyEventArg.Instance);
             }
         }
         else
         {
             Debug.Log("[MUISystem] 开屏动画完成");
-            // 发布事件：过渡完成
-            eventSystem.Publish(EventId.TransitionComplete, EmptyEventArg.Instance);
+            // 发布事件：过渡完成（UI → GameLogic）
+            eventSystem.Publish(EventId.UI_GameLogic_TransitionComplete, EmptyEventArg.Instance);
         }
     }
     
@@ -325,7 +325,7 @@ public class MUISystem : MonoBehaviour, ISystem
     #region 辅助方法
     private void CheckDrawingAnimationProgress()
     {
-        if (gameLogicSystem?.CurrentState != GameState.Drawing)
+        if (gameLogicSystem?.CurrentState != GameState.DrawingInProgress)
         {
             return;
         }
@@ -361,8 +361,8 @@ public class MUISystem : MonoBehaviour, ISystem
             hasNotifiedDrawingComplete = true;
             videoPlayerForPlayer.sendFrameReadyEvents = false;
             
-            // 发布事件：准备显示结果
-            eventSystem.Publish(EventId.ReadyToShowResult, EmptyEventArg.Instance);
+            // 发布事件：准备显示结果（UI → GameLogic）
+            eventSystem.Publish(EventId.UI_GameLogic_ReadyToShowResult, EmptyEventArg.Instance);
         }
     }
     

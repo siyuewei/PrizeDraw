@@ -1,42 +1,41 @@
-/// 
+/// <summary>
 /// 事件ID枚举 - 定义所有游戏事件
-/// 使用事件ID可以直接在代码中搜索事件的发布和订阅位置
-/// 
+/// 命名规范: 发送系统_接收系统_动作
+/// 例如: Input_GameLogic_RequestDraw 表示 InputSystem 向 GameLogicSystem 发送抽奖请求
+/// </summary>
 public enum EventId
 {
-    // ========== 游戏状态事件 ==========
-    // 游戏状态改变
-    GameStateChanged,
+    // ========== InputSystem → GameLogicSystem ==========
+    /// <summary>输入系统请求游戏逻辑系统执行抽奖</summary>
+    Input_GameLogic_RequestDraw,
     
-    // ========== 抽奖相关事件 ==========
-    // 请求执行抽奖
-    PrizeDrawRequested,
+    /// <summary>输入系统请求游戏逻辑系统切换奖项</summary>
+    Input_GameLogic_ChangePrizeIndex,
     
-    // 请求切换奖项
-    PrizeIndexChangeRequested,
+    /// <summary>输入系统请求游戏逻辑系统重新加载配置</summary>
+    Input_GameLogic_ReloadConfig,
     
-    // 奖项索引已更新（验证通过）
-    PrizeIndexUpdated,
+    /// <summary>输入系统请求游戏逻辑系统重启（进入下一轮）</summary>
+    Input_GameLogic_Restart,
     
-    // ========== 配置相关事件 ==========
-    // 请求重新加载配置
-    ReloadConfigRequested,
+    /// <summary>输入系统请求游戏逻辑系统切换必中榜单索引</summary>
+    Input_GameLogic_ChangeMustListIndex,
     
-    // ========== UI相关事件 ==========
-    // 抽奖动画已就绪，准备显示结果
-    ReadyToShowResult,
+    // ========== GameLogicSystem → UISystem ==========
+    /// <summary>游戏逻辑系统通知UI系统：游戏状态已改变</summary>
+    GameLogic_UI_StateChanged,
     
-    // 过渡动画完成
-    TransitionComplete,
+    /// <summary>游戏逻辑系统通知UI系统：奖项索引已更新</summary>
+    GameLogic_UI_PrizeIndexUpdated,
     
-    // 请求重启（进入下一轮抽奖）
-    RestartRequested,
+    /// <summary>游戏逻辑系统通知UI系统：必中榜单索引已改变</summary>
+    GameLogic_UI_MustListIndexChanged,
     
-    // ========== 必中榜单相关事件 ==========
-    // 请求切换必中榜单索引
-    ChangeMustListIndex,
+    // ========== UISystem → GameLogicSystem ==========
+    /// <summary>UI系统通知游戏逻辑系统：抽奖动画完成，准备显示结果</summary>
+    UI_GameLogic_ReadyToShowResult,
     
-    /// 必中榜单索引已改变
-    MustListIndexChanged,
+    /// <summary>UI系统通知游戏逻辑系统：过渡动画完成</summary>
+    UI_GameLogic_TransitionComplete,
 }
 

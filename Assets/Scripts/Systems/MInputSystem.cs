@@ -3,12 +3,12 @@ using UnityEngine;
 /// <summary>
 /// 输入系统 - 负责处理键盘输入并发送相应事件
 /// 
-/// 发布的事件：
-/// - EventId.PrizeDrawRequested - 抽奖（按键1）
-/// - EventId.PrizeIndexChangeRequested - 切换奖项（按键2/3/4/5）
-/// - EventId.ReloadConfigRequested - 重新加载配置（按键C）
-/// - EventId.RestartRequested - 重启（按键R）
-/// - EventId.ChangeMustListIndex - 切换必中榜单（按键A/S/D/F）
+/// 发布的事件（Input → GameLogic）：
+/// - Input_GameLogic_RequestDraw - 请求抽奖（按键1）
+/// - Input_GameLogic_ChangePrizeIndex - 切换奖项（按键2/3/4/5）
+/// - Input_GameLogic_ReloadConfig - 重新加载配置（按键C）
+/// - Input_GameLogic_Restart - 重启（按键R）
+/// - Input_GameLogic_ChangeMustListIndex - 切换必中榜单（按键A/S/D/F）
 /// </summary>
 public class MInputSystem : MonoBehaviour, ISystem
 {
@@ -63,22 +63,22 @@ public class MInputSystem : MonoBehaviour, ISystem
         if (Input.GetKeyDown(keyCode_Prize1))
         {
             // 发布事件：请求切换到1等奖
-            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(1));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangePrizeIndex, new IntEventArg(1));
         }
         else if (Input.GetKeyDown(keyCode_Prize2))
         {
             // 发布事件：请求切换到2等奖
-            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(2));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangePrizeIndex, new IntEventArg(2));
         }
         else if (Input.GetKeyDown(keyCode_Prize3))
         {
             // 发布事件：请求切换到3等奖
-            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(3));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangePrizeIndex, new IntEventArg(3));
         }
         else if (Input.GetKeyDown(keyCode_Prize4))
         {
             // 发布事件：请求切换到4等奖
-            eventSystem.Publish(EventId.PrizeIndexChangeRequested, new IntEventArg(4));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangePrizeIndex, new IntEventArg(4));
         }
     }
     
@@ -88,7 +88,7 @@ public class MInputSystem : MonoBehaviour, ISystem
         {
             int currentPrizeIndex = gameLogicSystem?.CurrentPrizeIndex ?? 1;
             // 发布事件：请求抽奖
-            eventSystem.Publish(EventId.PrizeDrawRequested, new IntEventArg(currentPrizeIndex));
+            eventSystem.Publish(EventId.Input_GameLogic_RequestDraw, new IntEventArg(currentPrizeIndex));
         }
     }
     
@@ -97,7 +97,7 @@ public class MInputSystem : MonoBehaviour, ISystem
         if (Input.GetKeyDown(keyCode_Reload))
         {
             // 发布事件：请求重新加载配置
-            eventSystem.Publish(EventId.ReloadConfigRequested, EmptyEventArg.Instance);
+            eventSystem.Publish(EventId.Input_GameLogic_ReloadConfig, EmptyEventArg.Instance);
         }
     }
 
@@ -106,7 +106,7 @@ public class MInputSystem : MonoBehaviour, ISystem
         if (Input.GetKeyDown(keyCode_Restart))
         {
             // 发布事件：请求重启
-            eventSystem.Publish(EventId.RestartRequested, EmptyEventArg.Instance);
+            eventSystem.Publish(EventId.Input_GameLogic_Restart, EmptyEventArg.Instance);
         }
     }
 
@@ -115,22 +115,22 @@ public class MInputSystem : MonoBehaviour, ISystem
         if (Input.GetKeyDown(keyCode_Must_0))
         {
             // 发布事件：切换必中榜单到0
-            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(0));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangeMustListIndex, new IntEventArg(0));
         }
         else if (Input.GetKeyDown(keyCode_Must_1))
         {
             // 发布事件：切换必中榜单到1
-            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(1));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangeMustListIndex, new IntEventArg(1));
         }
         else if (Input.GetKeyDown(keyCode_Must_2))
         {
             // 发布事件：切换必中榜单到2
-            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(2));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangeMustListIndex, new IntEventArg(2));
         }
         else if (Input.GetKeyDown(keyCode_Must_3))
         {
             // 发布事件：切换必中榜单到3
-            eventSystem.Publish(EventId.ChangeMustListIndex, new IntEventArg(3));
+            eventSystem.Publish(EventId.Input_GameLogic_ChangeMustListIndex, new IntEventArg(3));
         }
     }
     #endregion

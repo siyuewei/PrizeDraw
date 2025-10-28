@@ -6,25 +6,25 @@ using Sirenix.OdinInspector;
 /// <summary>
 /// 游戏逻辑系统 - 负责游戏状态管理和抽奖逻辑
 /// 
-/// 订阅的事件：
-/// - EventId.PrizeDrawRequested - 请求抽奖
-/// - EventId.PrizeIndexChangeRequested - 请求切换奖项
-/// - EventId.ReloadConfigRequested - 请求重新加载配置
-/// - EventId.RestartRequested - 请求重启
-/// - EventId.ReadyToShowResult - 准备显示结果
-/// - EventId.TransitionComplete - 过渡完成
-/// - EventId.ChangeMustListIndex - 切换必中榜单
+/// 订阅的事件（Input → GameLogic, UI → GameLogic）：
+/// - Input_GameLogic_RequestDraw - 请求抽奖
+/// - Input_GameLogic_ChangePrizeIndex - 请求切换奖项
+/// - Input_GameLogic_ReloadConfig - 请求重新加载配置
+/// - Input_GameLogic_Restart - 请求重启
+/// - Input_GameLogic_ChangeMustListIndex - 切换必中榜单
+/// - UI_GameLogic_ReadyToShowResult - UI动画完成，准备显示结果
+/// - UI_GameLogic_TransitionComplete - UI过渡完成
 /// 
-/// 发布的事件：
-/// - EventId.GameStateChanged - 游戏状态改变
-/// - EventId.PrizeIndexUpdated - 奖项已更新
-/// - EventId.MustListIndexChanged - 必中榜单索引已改变
+/// 发布的事件（GameLogic → UI）：
+/// - GameLogic_UI_StateChanged - 游戏状态改变
+/// - GameLogic_UI_PrizeIndexUpdated - 奖项已更新
+/// - GameLogic_UI_MustListIndexChanged - 必中榜单索引已改变
 /// </summary>
 public class MGameLogicSystem : MonoBehaviour, ISystem
 {
     #region 公开属性
     [ShowInInspector, ReadOnly]
-    public GameState CurrentState { get; private set; } = GameState.Idle;
+    public GameState CurrentState { get; private set; } = GameState.WaitingForDraw;
     
     public int CurrentPrizeIndex { get; private set; } = 1;
     public int LastWinnerID { get; private set; } = 0;
@@ -61,7 +61,7 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         Random.InitState(System.DateTime.Now.Millisecond);
         
         SubscribeToEvents();
-        ChangeState(GameState.Idle);
+        ChangeState(GameState.WaitingForDraw);
         
         Debug.Log("[MGameLogicSystem] 游戏逻辑系统初始化完成");
     }
@@ -76,46 +76,48 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
     #region 事件订阅管理
     private void SubscribeToEvents()
     {
-        // 搜索 "EventId.PrizeDrawRequested" 可以找到所有发布此事件的位置
-        eventSystem.Subscribe<IntEventArg>(EventId.PrizeDrawRequested, HandlePrizeDrawRequested);
-        eventSystem.Subscribe<IntEventArg>(EventId.PrizeIndexChangeRequested, HandlePrizeIndexChangeRequested);
-        eventSystem.Subscribe<EmptyEventArg>(EventId.ReloadConfigRequested, HandleReloadConfigRequested);
-        eventSystem.Subscribe<EmptyEventArg>(EventId.RestartRequested, HandleRestartRequested);
-        eventSystem.Subscribe<EmptyEventArg>(EventId.ReadyToShowResult, HandleReadyToShowResult);
-        eventSystem.Subscribe<EmptyEventArg>(EventId.TransitionComplete, HandleTransitionComplete);
-        eventSystem.Subscribe<IntEventArg>(EventId.ChangeMustListIndex, HandleChangeMustListIndex);
+        // 订阅来自InputSystem的事件
+        eventSystem.Subscribe<IntEventArg>(EventId.Input_GameLogic_RequestDraw, HandlePrizeDrawRequested);
+        eventSystem.Subscribe<IntEventArg>(EventId.Input_GameLogic_ChangePrizeIndex, HandlePrizeIndexChangeRequested);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.Input_GameLogic_ReloadConfig, HandleReloadConfigRequested);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.Input_GameLogic_Restart, HandleRestartRequested);
+        eventSystem.Subscribe<IntEventArg>(EventId.Input_GameLogic_ChangeMustListIndex, HandleChangeMustListIndex);
+        
+        // 订阅来自UISystem的事件
+        eventSystem.Subscribe<EmptyEventArg>(EventId.UI_GameLogic_ReadyToShowResult, HandleReadyToShowResult);
+        eventSystem.Subscribe<EmptyEventArg>(EventId.UI_GameLogic_TransitionComplete, HandleTransitionComplete);
     }
     
     private void UnsubscribeFromEvents()
     {
-        eventSystem.Unsubscribe<IntEventArg>(EventId.PrizeDrawRequested, HandlePrizeDrawRequested);
-        eventSystem.Unsubscribe<IntEventArg>(EventId.PrizeIndexChangeRequested, HandlePrizeIndexChangeRequested);
-        eventSystem.Unsubscribe<EmptyEventArg>(EventId.ReloadConfigRequested, HandleReloadConfigRequested);
-        eventSystem.Unsubscribe<EmptyEventArg>(EventId.RestartRequested, HandleRestartRequested);
-        eventSystem.Unsubscribe<EmptyEventArg>(EventId.ReadyToShowResult, HandleReadyToShowResult);
-        eventSystem.Unsubscribe<EmptyEventArg>(EventId.TransitionComplete, HandleTransitionComplete);
-        eventSystem.Unsubscribe<IntEventArg>(EventId.ChangeMustListIndex, HandleChangeMustListIndex);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.Input_GameLogic_RequestDraw, HandlePrizeDrawRequested);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.Input_GameLogic_ChangePrizeIndex, HandlePrizeIndexChangeRequested);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.Input_GameLogic_ReloadConfig, HandleReloadConfigRequested);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.Input_GameLogic_Restart, HandleRestartRequested);
+        eventSystem.Unsubscribe<IntEventArg>(EventId.Input_GameLogic_ChangeMustListIndex, HandleChangeMustListIndex);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.UI_GameLogic_ReadyToShowResult, HandleReadyToShowResult);
+        eventSystem.Unsubscribe<EmptyEventArg>(EventId.UI_GameLogic_TransitionComplete, HandleTransitionComplete);
     }
     #endregion
     
     #region 事件处理方法
     private void HandlePrizeDrawRequested(IntEventArg arg)
     {
-        if (CurrentState != GameState.Idle)
+        if (CurrentState != GameState.WaitingForDraw)
         {
             Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法进行抽奖");
             return;
         }
         
         ExecutePrizeDraw();
-        ChangeState(GameState.Drawing);
+        ChangeState(GameState.DrawingInProgress);
     }
     
     private void HandlePrizeIndexChangeRequested(IntEventArg arg)
     {
         int prizeIndex = arg.value;
         
-        if (CurrentState != GameState.Idle)
+        if (CurrentState != GameState.WaitingForDraw)
         {
             Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法切换奖项");
             return;
@@ -130,13 +132,13 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         CurrentPrizeIndex = prizeIndex;
         Debug.Log($"[MGameLogicSystem] 奖项已切换到: {prizeIndex}等奖");
         
-        // 发布事件：奖项已更新
-        eventSystem.Publish(EventId.PrizeIndexUpdated, new IntEventArg(prizeIndex));
+        // 发布事件：奖项已更新（GameLogic → UI）
+        eventSystem.Publish(EventId.GameLogic_UI_PrizeIndexUpdated, new IntEventArg(prizeIndex));
     }
     
     private void HandleReloadConfigRequested(EmptyEventArg arg)
     {
-        if (CurrentState != GameState.Idle)
+        if (CurrentState != GameState.WaitingForDraw)
         {
             Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法重新加载配置");
             return;
@@ -148,33 +150,33 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
     
     private void HandleRestartRequested(EmptyEventArg arg)
     {
-        if (CurrentState != GameState.ShowingResult)
+        if (CurrentState != GameState.ShowingWinner)
         {
             Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法重启");
             return;
         }
         
-        ChangeState(GameState.Transitioning);
+        ChangeState(GameState.TransitionToNext);
     }
     
     private void HandleReadyToShowResult(EmptyEventArg arg)
     {
-        if (CurrentState != GameState.Drawing)
+        if (CurrentState != GameState.DrawingInProgress)
         {
             return;
         }
         
-        ChangeState(GameState.ShowingResult);
+        ChangeState(GameState.ShowingWinner);
     }
     
     private void HandleTransitionComplete(EmptyEventArg arg)
     {
-        if (CurrentState != GameState.Transitioning)
+        if (CurrentState != GameState.TransitionToNext)
         {
             return;
         }
         
-        ChangeState(GameState.Idle);
+        ChangeState(GameState.WaitingForDraw);
     }
     
     private void HandleChangeMustListIndex(IntEventArg arg)
@@ -182,8 +184,8 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         this.mustListIndex = arg.value;
         Debug.Log($"[MGameLogicSystem] 必中榜单索引已切换到: {this.mustListIndex}");
         
-        // 发布事件：必中榜单索引已改变
-        eventSystem.Publish(EventId.MustListIndexChanged, new IntEventArg(this.mustListIndex));
+        // 发布事件：必中榜单索引已改变（GameLogic → UI）
+        eventSystem.Publish(EventId.GameLogic_UI_MustListIndexChanged, new IntEventArg(this.mustListIndex));
     }
     #endregion
     
@@ -198,8 +200,8 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
         Debug.Log($"[MGameLogicSystem] 状态切换: {CurrentState} -> {newState}");
         CurrentState = newState;
         
-        // 发布事件：游戏状态改变
-        eventSystem.Publish(EventId.GameStateChanged, new GameStateEventArg(newState));
+        // 发布事件：游戏状态改变（GameLogic → UI）
+        eventSystem.Publish(EventId.GameLogic_UI_StateChanged, new GameStateEventArg(newState));
     }
     #endregion
     
@@ -332,7 +334,7 @@ public class MGameLogicSystem : MonoBehaviour, ISystem
     
     public void ClearDrawHistory()
     {
-        if (CurrentState != GameState.Idle)
+        if (CurrentState != GameState.WaitingForDraw)
         {
             Debug.LogWarning($"[MGameLogicSystem] 当前状态为 {CurrentState}，无法清除历史");
             return;
